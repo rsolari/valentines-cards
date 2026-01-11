@@ -473,7 +473,7 @@ def generate_greek_card_front(
     top_text_width = top_bbox[2] - top_bbox[0]
     top_x = (width - top_text_width) // 2
     top_y = 56  # Just below border
-    draw.text((top_x, top_y), top_text, fill=PALETTE.black, font=top_font)
+    draw.text((top_x, top_y), top_text, fill="#FF0000", font=top_font)  # RED for testing
 
     # Add Valentine's greeting in center-bottom area
 
