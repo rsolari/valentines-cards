@@ -341,39 +341,96 @@ def generate_greek_card_front(
     add_texture: bool = True,
     minotaur_path: str = None
 ) -> Image:
-    """Generate card front with Greek pottery styling."""
+    """Generate card front with Greek pottery styling.
+
+    Layout spec (from design critique):
+    - Border: 10px stroke, inner margins 66px top/bottom, 60px left/right
+    - Header: 90px top padding, 84px gap to illustration
+    - Illustration: centered at x=375, 96px below header, 90px above pun
+    - Pun line: 90px gaps above and below
+    - Credit: 6.5pt at 82% opacity, 54px from bottom-right inner border
+    """
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
+    # Layout constants from spec
+    INNER_MARGIN_TOP = 66
+    INNER_MARGIN_BOTTOM = 66
+    INNER_MARGIN_LEFT = 60
+    INNER_MARGIN_RIGHT = 60
+    HEADER_TOP_PADDING = 90
+    HEADER_TO_ILLUSTRATION_GAP = 84
+    ILLUSTRATION_TO_PUN_GAP = 90
+    PUN_BOTTOM_PADDING = 90
+    CENTER_X = width // 2  # 375
+    OPTICAL_NUDGE_X = -12
+    CREDIT_OFFSET_RIGHT = 54
+    CREDIT_OFFSET_BOTTOM = 54
+
     draw_card_borders(draw, width, height, border_width)
+
+    # Setup fonts
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
+
+    # Calculate header position
+    try:
+        header_font = ImageFont.truetype(greek_font_path, 80)
+    except:
+        header_font = ImageFont.load_default()
+
+    header_text = "Happy Valentine's"
+    header_bbox = draw.textbbox((0, 0), header_text, font=header_font)
+    header_width = header_bbox[2] - header_bbox[0]
+    header_height = header_bbox[3] - header_bbox[1]
+    header_x = CENTER_X - header_width // 2
+    header_y = INNER_MARGIN_TOP + HEADER_TOP_PADDING
+
+    # Calculate pun line position (from bottom)
+    try:
+        small_font = ImageFont.truetype(greek_font_path, 42)
+        big_font = ImageFont.truetype(greek_font_path, 90)
+    except:
+        small_font = big_font = ImageFont.load_default()
+
+    part1, part2, part3 = "You are a", "MAZE", "ing!"
+    bbox1 = draw.textbbox((0, 0), part1, font=small_font)
+    bbox2 = draw.textbbox((0, 0), part2, font=big_font)
+    bbox3 = draw.textbbox((0, 0), part3, font=small_font)
+    w1, w2, w3 = bbox1[2] - bbox1[0], bbox2[2] - bbox2[0], bbox3[2] - bbox3[0]
+    h1, h2 = bbox1[3] - bbox1[1], bbox2[3] - bbox2[1]
+    pun_total_width = w1 + w2 + w3
+
+    # Pun baseline from bottom inner border
+    pun_baseline_y = height - INNER_MARGIN_BOTTOM - PUN_BOTTOM_PADDING
+    pun_start_x = CENTER_X - pun_total_width // 2
+
+    # Calculate illustration zone
+    illustration_top = header_y + header_height + HEADER_TO_ILLUSTRATION_GAP
+    illustration_bottom = pun_baseline_y - h2 - ILLUSTRATION_TO_PUN_GAP
+    illustration_zone_height = illustration_bottom - illustration_top
+    illustration_zone_width = width - INNER_MARGIN_LEFT - INNER_MARGIN_RIGHT
 
     # Add minotaur artwork
     if minotaur_path:
         try:
             minotaur = Image.open(minotaur_path).convert('RGBA')
-            content_width = width - 2 * (border_width + 10)
-            content_height = height - 220
 
             minotaur_ratio = minotaur.width / minotaur.height
-            content_ratio = content_width / content_height
+            zone_ratio = illustration_zone_width / illustration_zone_height
 
-            if minotaur_ratio > content_ratio:
-                new_width = content_width
-                new_height = int(content_width / minotaur_ratio)
+            if minotaur_ratio > zone_ratio:
+                new_width = illustration_zone_width
+                new_height = int(illustration_zone_width / minotaur_ratio)
             else:
-                new_height = content_height
-                new_width = int(content_height * minotaur_ratio)
-
-            # Scale 15% larger
-            new_width = int(new_width * 1.15)
-            new_height = int(new_height * 1.15)
+                new_height = illustration_zone_height
+                new_width = int(illustration_zone_height * minotaur_ratio)
 
             minotaur = minotaur.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-            x_pos = (width - new_width) // 2
-            minotaur_top = 120
-            minotaur_bottom = height - 200
-            y_pos = minotaur_top + (minotaur_bottom - minotaur_top - new_height) // 2
+            # Center in illustration zone with optical nudge
+            x_pos = CENTER_X - new_width // 2 + OPTICAL_NUDGE_X
+            y_pos = illustration_top + (illustration_zone_height - new_height) // 2
 
             img = img.convert('RGBA')
             img.paste(minotaur, (x_pos, y_pos), minotaur)
@@ -382,57 +439,33 @@ def generate_greek_card_front(
         except Exception as e:
             print(f"Could not load minotaur image: {e}")
 
-    # Setup fonts
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
-
     draw = ImageDraw.Draw(img)
 
-    # "Happy Valentines" title
-    try:
-        top_font = ImageFont.truetype(greek_font_path, 80)
-    except:
-        top_font = ImageFont.load_default()
+    # Draw header
+    draw.text((header_x, header_y), header_text, fill=PALETTE.black, font=header_font)
 
-    top_text = "Happy Valentine's"
-    top_bbox = draw.textbbox((0, 0), top_text, font=top_font)
-    top_x = (width - (top_bbox[2] - top_bbox[0])) // 2
-    draw.text((top_x, 70), top_text, fill=PALETTE.black, font=top_font)
-
-    # "You are aMAZEing!" with emphasis on MAZE
-    try:
-        small_font = ImageFont.truetype(greek_font_path, 42)
-        big_font = ImageFont.truetype(greek_font_path, 90)
-    except:
-        small_font = big_font = ImageFont.load_default()
-
-    part1, part2, part3 = "You are a", "MAZE", "ing!"
-
-    bbox1 = draw.textbbox((0, 0), part1, font=small_font)
-    bbox2 = draw.textbbox((0, 0), part2, font=big_font)
-    bbox3 = draw.textbbox((0, 0), part3, font=small_font)
-
-    w1, w2, w3 = bbox1[2] - bbox1[0], bbox2[2] - bbox2[0], bbox3[2] - bbox3[0]
-    h1, h2 = bbox1[3] - bbox1[1], bbox2[3] - bbox2[1]
-
-    text_y = height - 200 + (120 - h2) // 2
-    start_x = (width - (w1 + w2 + w3)) // 2
+    # Draw pun line with baseline alignment
     baseline_offset = h2 - h1
+    pun_y = pun_baseline_y - h2
+    draw.text((pun_start_x, pun_y + baseline_offset), part1, fill=PALETTE.black, font=small_font)
+    draw.text((pun_start_x + w1, pun_y), part2, fill=PALETTE.black, font=big_font)
+    draw.text((pun_start_x + w1 + w2, pun_y + baseline_offset), part3, fill=PALETTE.black, font=small_font)
 
-    draw.text((start_x, text_y + baseline_offset), part1, fill=PALETTE.black, font=small_font)
-    draw.text((start_x + w1, text_y), part2, fill=PALETTE.black, font=big_font)
-    draw.text((start_x + w1 + w2, text_y + baseline_offset), part3, fill=PALETTE.black, font=small_font)
-
-    # Artist credit
+    # Artist credit (6.5pt ≈ 8-9px at 300dpi, with 82% opacity)
     try:
-        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11)
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
     except:
         credit_font = ImageFont.load_default()
 
     credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
-    credit_x = width - (credit_bbox[2] - credit_bbox[0]) - 56
-    draw.text((credit_x, height - 72), credit_text, fill=PALETTE.black, font=credit_font)
+    credit_width = credit_bbox[2] - credit_bbox[0]
+    credit_x = width - INNER_MARGIN_RIGHT - CREDIT_OFFSET_RIGHT - credit_width
+    credit_y = height - INNER_MARGIN_BOTTOM - CREDIT_OFFSET_BOTTOM
+
+    # Draw credit with 82% opacity (simulate by using slightly lighter color)
+    credit_color = "#363636"  # ~82% opacity black on terracotta
+    draw.text((credit_x, credit_y), credit_text, fill=credit_color, font=credit_font)
 
     if add_texture:
         img = add_pottery_texture(img)
