@@ -23,7 +23,7 @@ Create unique Valentine's cards featuring:
 ```
 valentines-cards/
 ├── assets/
-│   ├── pixel-art/      # Minotaur artwork and Valentine designs
+│   ├── artwork/        # Minotaur artwork and Valentine designs
 │   ├── mazes/          # Generated maze images
 │   └── templates/      # Print-ready card templates
 ├── src/                # Maze generation scripts

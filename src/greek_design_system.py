@@ -430,6 +430,17 @@ def generate_greek_card_front(
         except Exception as e:
             print(f"Could not load minotaur image: {e}")
 
+    # Add artist credit at bottom left
+    from PIL import ImageFont
+    try:
+        # Try to use a small font
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+    except:
+        font = ImageFont.load_default()
+
+    credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
+    draw.text((55, height - 70), credit_text, fill=PALETTE.black, font=font)
+
     # Add texture (after compositing)
     if add_texture:
         img = add_pottery_texture(img)
@@ -501,10 +512,10 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Check for minotaur image
-    minotaur_path = os.path.join(base_dir, "assets", "pixel-art", "minotaur.png")
+    minotaur_path = os.path.join(base_dir, "assets", "artwork", "minotaur.png")
     if not os.path.exists(minotaur_path):
         minotaur_path = None
-        print("Note: No minotaur.png found in assets/pixel-art/")
+        print("Note: No minotaur.png found in assets/artwork/")
         print("      Place your minotaur image there and re-run to include it.")
         print()
 
