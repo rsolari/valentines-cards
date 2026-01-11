@@ -61,7 +61,7 @@ def draw_greek_key_border(
     draw.line([(x, top_y), (x + width, top_y)], fill=fg, width=line_width)
     draw.line([(x, bottom_y), (x + width, bottom_y)], fill=fg, width=line_width)
 
-    num_units = width // key_size
+    num_units = -(-width // key_size)  # Ceiling division to fill edge
     step = key_size // 4
 
     for i in range(num_units):
@@ -107,7 +107,7 @@ def draw_greek_key_border_vertical(
     draw.line([(left_x, y), (left_x, y + height)], fill=fg, width=line_width)
     draw.line([(right_x, y), (right_x, y + height)], fill=fg, width=line_width)
 
-    num_units = height // key_size
+    num_units = -(-height // key_size)  # Ceiling division to fill edge
     step = key_size // 4
 
     for i in range(num_units):
