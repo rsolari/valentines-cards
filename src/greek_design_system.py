@@ -449,16 +449,16 @@ def generate_greek_card_front(
     from PIL import ImageFont
 
     # Path to custom Greek-style font
-    base_dir = os.path.dirname(__file__)
-    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "CaesarDressing-Regular.ttf")
-    fallback_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Cinzel-Bold.ttf")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
+    fallback_font_path = os.path.join(base_dir, "..", "assets", "fonts", "CaesarDressing-Regular.ttf")
 
     try:
         # Use decorative Greek-style font
         if os.path.exists(greek_font_path):
-            greeting_font = ImageFont.truetype(greek_font_path, 52)
+            greeting_font = ImageFont.truetype(greek_font_path, 48)
         elif os.path.exists(fallback_font_path):
-            greeting_font = ImageFont.truetype(fallback_font_path, 46)
+            greeting_font = ImageFont.truetype(fallback_font_path, 52)
         else:
             greeting_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
     except:
