@@ -453,15 +453,22 @@ def generate_greek_card_front(
     greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
     fallback_font_path = os.path.join(base_dir, "..", "assets", "fonts", "CaesarDressing-Regular.ttf")
 
+    print(f"Looking for Greek-Freak font at: {greek_font_path}")
+    print(f"Font exists: {os.path.exists(greek_font_path)}")
+
     try:
         # Use decorative Greek-style font
         if os.path.exists(greek_font_path):
-            greeting_font = ImageFont.truetype(greek_font_path, 48)
+            greeting_font = ImageFont.truetype(greek_font_path, 72)
+            print(f"Loaded Greek-Freak font: {greeting_font.getname()}")
         elif os.path.exists(fallback_font_path):
             greeting_font = ImageFont.truetype(fallback_font_path, 52)
+            print(f"Loaded fallback font: {greeting_font.getname()}")
         else:
             greeting_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
-    except:
+            print("Using DejaVu fallback")
+    except Exception as e:
+        print(f"Font error: {e}")
         greeting_font = ImageFont.load_default()
 
     greeting_text = "You are aMAZEing!"
