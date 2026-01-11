@@ -593,18 +593,25 @@ def generate_greek_card_back(
     except:
         label_font = ImageFont.load_default()
 
-    # "start" label above entrance (top center)
-    entrance_x = maze_x + (maze_cols // 2) * cell_size + cell_size // 2
+    # The maze entrance/exit is at column (maze_cols // 2)
+    # Center of that cell is: maze_x + col * cell_size + cell_size / 2
+    entrance_col = maze_cols // 2
+    opening_center_x = maze_x + entrance_col * cell_size + cell_size // 2
+
+    # "start" label above entrance - account for textbbox x-offset when centering
     start_bbox = draw.textbbox((0, 0), "start", font=label_font)
     start_width = start_bbox[2] - start_bbox[0]
-    draw.text((entrance_x - start_width // 2, maze_y - 20), "start", fill=PALETTE.black, font=label_font)
+    start_x_offset = start_bbox[0]  # Text may not start at x=0
+    start_x = opening_center_x - start_width // 2 - start_x_offset
+    draw.text((start_x, maze_y - 20), "start", fill=PALETTE.black, font=label_font)
 
-    # "end" label below exit (bottom center)
-    exit_x = maze_x + (maze_cols // 2) * cell_size + cell_size // 2
+    # "end" label below exit - account for textbbox x-offset when centering
     exit_y = maze_y + maze_rows * cell_size
     end_bbox = draw.textbbox((0, 0), "end", font=label_font)
     end_width = end_bbox[2] - end_bbox[0]
-    draw.text((exit_x - end_width // 2, exit_y + 6), "end", fill=PALETTE.black, font=label_font)
+    end_x_offset = end_bbox[0]
+    end_x = opening_center_x - end_width // 2 - end_x_offset
+    draw.text((end_x, exit_y + 6), "end", fill=PALETTE.black, font=label_font)
 
     # Setup fonts
     base_dir = os.path.dirname(os.path.abspath(__file__))
