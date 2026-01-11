@@ -421,6 +421,10 @@ def generate_greek_card_front(
                 new_height = content_height
                 new_width = int(content_height * minotaur_ratio)
 
+            # Make minotaur 15% larger
+            new_width = int(new_width * 1.15)
+            new_height = int(new_height * 1.15)
+
             print(f"Resizing minotaur to: {new_width}x{new_height}")
             minotaur = minotaur.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
@@ -516,10 +520,10 @@ def generate_greek_card_front(
         credit_font = ImageFont.load_default()
 
     credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
-    # Center the credit text
+    # Right-align the credit text
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
     credit_width = credit_bbox[2] - credit_bbox[0]
-    credit_x = (width - credit_width) // 2
+    credit_x = width - credit_width - 55  # Right-aligned with margin
     draw.text((credit_x, height - 75), credit_text, fill=PALETTE.black, font=credit_font)
 
     # Add texture (after compositing)
