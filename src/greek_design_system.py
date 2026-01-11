@@ -151,6 +151,159 @@ def add_pottery_texture(image: Image) -> Image:
 
 
 # =============================================================================
+# MAZE GENERATION
+# =============================================================================
+
+def generate_maze(rows: int, cols: int) -> list:
+    """Generate a maze using recursive backtracker algorithm.
+
+    Returns a 2D grid where each cell has walls: {'N': bool, 'S': bool, 'E': bool, 'W': bool}
+    True = wall exists, False = passage
+    """
+    # Initialize grid with all walls
+    grid = [[{'N': True, 'S': True, 'E': True, 'W': True} for _ in range(cols)] for _ in range(rows)]
+
+    # Direction mappings
+    directions = {
+        'N': (-1, 0, 'S'),  # (row_delta, col_delta, opposite_wall)
+        'S': (1, 0, 'N'),
+        'E': (0, 1, 'W'),
+        'W': (0, -1, 'E')
+    }
+
+    visited = [[False] * cols for _ in range(rows)]
+    stack = [(0, 0)]  # Start at top-left
+    visited[0][0] = True
+
+    while stack:
+        row, col = stack[-1]
+
+        # Find unvisited neighbors
+        neighbors = []
+        for direction, (dr, dc, _) in directions.items():
+            nr, nc = row + dr, col + dc
+            if 0 <= nr < rows and 0 <= nc < cols and not visited[nr][nc]:
+                neighbors.append((direction, nr, nc))
+
+        if neighbors:
+            # Choose random neighbor
+            direction, nr, nc = random.choice(neighbors)
+            _, _, opposite = directions[direction]
+
+            # Remove walls between current and neighbor
+            grid[row][col][direction] = False
+            grid[nr][nc][opposite] = False
+
+            visited[nr][nc] = True
+            stack.append((nr, nc))
+        else:
+            stack.pop()
+
+    # Create entrance (top) and exit (bottom)
+    grid[0][cols // 2]['N'] = False  # Entrance at top center
+    grid[rows - 1][cols // 2]['S'] = False  # Exit at bottom center
+
+    return grid
+
+
+def draw_mosaic_wall(
+    draw: ImageDraw,
+    x1: int, y1: int,
+    x2: int, y2: int,
+    tile_size: int = 6,
+    gap: int = 2,
+    base_color: str = None
+):
+    """Draw a wall segment as mosaic tiles."""
+    base = base_color or PALETTE.black
+
+    # Parse base color
+    if base.startswith('#'):
+        base_rgb = tuple(int(base.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+    else:
+        base_rgb = (26, 26, 26)  # Default black
+
+    # Determine if horizontal or vertical
+    if abs(x2 - x1) > abs(y2 - y1):
+        # Horizontal wall
+        start_x, end_x = min(x1, x2), max(x1, x2)
+        y = y1
+        x = start_x
+        while x < end_x:
+            # Vary color slightly for each tile
+            factor = random.uniform(0.7, 1.3)
+            tile_color = tuple(max(0, min(255, int(c * factor))) for c in base_rgb)
+
+            tile_end = min(x + tile_size, end_x)
+            half_tile = tile_size // 2
+            draw.rectangle([x, y - half_tile, tile_end, y + half_tile], fill=tile_color)
+            x += tile_size + gap
+    else:
+        # Vertical wall
+        start_y, end_y = min(y1, y2), max(y1, y2)
+        x = x1
+        y = start_y
+        while y < end_y:
+            # Vary color slightly for each tile
+            factor = random.uniform(0.7, 1.3)
+            tile_color = tuple(max(0, min(255, int(c * factor))) for c in base_rgb)
+
+            tile_end = min(y + tile_size, end_y)
+            half_tile = tile_size // 2
+            draw.rectangle([x - half_tile, y, x + half_tile, tile_end], fill=tile_color)
+            y += tile_size + gap
+
+
+def draw_maze(
+    draw: ImageDraw,
+    grid: list,
+    x_offset: int,
+    y_offset: int,
+    cell_size: int,
+    tile_size: int = 6,
+    gap: int = 2,
+    wall_color: str = None
+):
+    """Draw the maze on the image using mosaic tiles."""
+    rows = len(grid)
+    cols = len(grid[0])
+
+    for row in range(rows):
+        for col in range(cols):
+            cell = grid[row][col]
+            cx = x_offset + col * cell_size
+            cy = y_offset + row * cell_size
+
+            # Draw north wall
+            if cell['N']:
+                draw_mosaic_wall(draw, cx, cy, cx + cell_size, cy,
+                               tile_size=tile_size, gap=gap, base_color=wall_color)
+
+            # Draw west wall
+            if cell['W']:
+                draw_mosaic_wall(draw, cx, cy, cx, cy + cell_size,
+                               tile_size=tile_size, gap=gap, base_color=wall_color)
+
+    # Draw east border (right edge)
+    for row in range(rows):
+        cell = grid[row][cols - 1]
+        if cell['E']:
+            cx = x_offset + cols * cell_size
+            cy = y_offset + row * cell_size
+            draw_mosaic_wall(draw, cx, cy, cx, cy + cell_size,
+                           tile_size=tile_size, gap=gap, base_color=wall_color)
+
+    # Draw south border (bottom edge)
+    for col in range(cols):
+        cell = grid[rows - 1][col]
+        if cell['S']:
+            cx = x_offset + col * cell_size
+            cy = y_offset + rows * cell_size
+            draw_mosaic_wall(draw, cx, cy, cx + cell_size, cy,
+                           tile_size=tile_size, gap=gap, base_color=wall_color)
+
+
+# =============================================================================
 # SHARED BORDER DRAWING
 # =============================================================================
 
@@ -290,13 +443,68 @@ def generate_greek_card_front(
 def generate_greek_card_back(
     width: int = 750,
     height: int = 1050,
-    border_width: int = 40
+    border_width: int = 40,
+    add_texture: bool = True
 ) -> Image:
-    """Generate card back with matching Greek borders."""
+    """Generate card back with maze and text."""
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
     draw_card_borders(draw, width, height, border_width)
+
+    # Calculate maze area (leave room for text at bottom)
+    maze_margin = 60  # Inside the Greek key border
+    text_area_height = 100  # Space for "From Felix" and credit
+    maze_x = maze_margin
+    maze_y = maze_margin
+    maze_width = width - 2 * maze_margin
+    maze_height = height - 2 * maze_margin - text_area_height
+
+    # Maze parameters
+    cell_size = 40  # Size of each maze cell
+    maze_cols = maze_width // cell_size
+    maze_rows = maze_height // cell_size
+
+    # Center the maze in the available space
+    actual_maze_width = maze_cols * cell_size
+    actual_maze_height = maze_rows * cell_size
+    maze_x = (width - actual_maze_width) // 2
+    maze_y = maze_margin + (maze_height - actual_maze_height) // 2
+
+    # Generate and draw maze
+    grid = generate_maze(maze_rows, maze_cols)
+    draw_maze(draw, grid, maze_x, maze_y, cell_size, tile_size=6, gap=2)
+
+    # Setup fonts
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
+
+    # "From Felix" text
+    try:
+        from_font = ImageFont.truetype(greek_font_path, 48)
+    except:
+        from_font = ImageFont.load_default()
+
+    from_text = "From Felix"
+    from_bbox = draw.textbbox((0, 0), from_text, font=from_font)
+    from_x = (width - (from_bbox[2] - from_bbox[0])) // 2
+    from_y = height - text_area_height - 20
+    draw.text((from_x, from_y), from_text, fill=PALETTE.black, font=from_font)
+
+    # "designed by Felix and his mom" credit
+    try:
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
+    except:
+        credit_font = ImageFont.load_default()
+
+    credit_text = "designed by Felix and his mom"
+    credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
+    credit_x = (width - (credit_bbox[2] - credit_bbox[0])) // 2
+    credit_y = height - 70
+    draw.text((credit_x, credit_y), credit_text, fill=PALETTE.black, font=credit_font)
+
+    if add_texture:
+        img = add_pottery_texture(img)
 
     return img
 
