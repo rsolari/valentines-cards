@@ -471,18 +471,43 @@ def generate_greek_card_front(
         print(f"Font error: {e}")
         greeting_font = ImageFont.load_default()
 
-    greeting_text = "You are aMAZEing!"
-
     # Need to recreate draw object after image mode conversion
     draw = ImageDraw.Draw(img)
 
-    # Get text bounding box to center it
-    bbox = draw.textbbox((0, 0), greeting_text, font=greeting_font)
-    text_width = bbox[2] - bbox[0]
-    text_x = (width - text_width) // 2
-    text_y = height - 145  # Position above the credit with better spacing
+    # Render text in parts: "You are a" + "MAZE" (bigger) + "ing!"
+    small_font = greeting_font  # 72pt
+    try:
+        big_font = ImageFont.truetype(greek_font_path, 96)  # Larger for MAZE
+    except:
+        big_font = small_font
 
-    draw.text((text_x, text_y), greeting_text, fill=PALETTE.black, font=greeting_font)
+    part1 = "You are a"
+    part2 = "MAZE"
+    part3 = "ing!"
+
+    # Calculate widths
+    bbox1 = draw.textbbox((0, 0), part1, font=small_font)
+    bbox2 = draw.textbbox((0, 0), part2, font=big_font)
+    bbox3 = draw.textbbox((0, 0), part3, font=small_font)
+
+    w1 = bbox1[2] - bbox1[0]
+    w2 = bbox2[2] - bbox2[0]
+    w3 = bbox3[2] - bbox3[0]
+    total_width = w1 + w2 + w3
+
+    # Heights for vertical alignment
+    h1 = bbox1[3] - bbox1[1]
+    h2 = bbox2[3] - bbox2[1]
+
+    # Center the whole thing horizontally
+    start_x = (width - total_width) // 2
+    text_y = height - 155  # Base position
+
+    # Draw each part, aligning baselines
+    baseline_offset = h2 - h1  # Offset to align smaller text with bigger text baseline
+    draw.text((start_x, text_y + baseline_offset), part1, fill=PALETTE.black, font=small_font)
+    draw.text((start_x + w1, text_y), part2, fill=PALETTE.black, font=big_font)
+    draw.text((start_x + w1 + w2, text_y + baseline_offset), part3, fill=PALETTE.black, font=small_font)
 
     # Add artist credit at bottom left
     try:
