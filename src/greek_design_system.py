@@ -151,6 +151,33 @@ def add_pottery_texture(image: Image) -> Image:
 
 
 # =============================================================================
+# SHARED BORDER DRAWING
+# =============================================================================
+
+def draw_card_borders(
+    draw: ImageDraw,
+    width: int,
+    height: int,
+    border_width: int = 40,
+    key_size: int = 32,
+    line_w: int = 3
+):
+    """Draw Greek key borders and corner squares (shared by front and back)."""
+    # Horizontal borders (top and bottom)
+    draw_greek_key_border(draw, border_width, 5, width - 2 * border_width, 45, key_size=key_size, line_width=line_w)
+    draw_greek_key_border(draw, border_width, height - 50, width - 2 * border_width, 45, key_size=key_size, line_width=line_w)
+
+    # Vertical borders (left and right)
+    draw_greek_key_border_vertical(draw, 5, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
+    draw_greek_key_border_vertical(draw, width - 45, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
+
+    # Corner squares
+    for corners in [(5, 5, 45, 50), (width - 45, 5, width - 5, 50),
+                    (5, height - 50, 45, height - 5), (width - 45, height - 50, width - 5, height - 5)]:
+        draw.rectangle(corners, fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+
+
+# =============================================================================
 # CARD GENERATORS
 # =============================================================================
 
@@ -165,19 +192,7 @@ def generate_greek_card_front(
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
-    key_size = 32
-    line_w = 3
-
-    # Draw borders
-    draw_greek_key_border(draw, border_width, 5, width - 2 * border_width, 45, key_size=key_size, line_width=line_w)
-    draw_greek_key_border(draw, border_width, height - 50, width - 2 * border_width, 45, key_size=key_size, line_width=line_w)
-    draw_greek_key_border_vertical(draw, 5, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
-    draw_greek_key_border_vertical(draw, width - 45, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
-
-    # Corner squares
-    for corners in [(5, 5, 45, 50), (width - 45, 5, width - 5, 50),
-                    (5, height - 50, 45, height - 5), (width - 45, height - 50, width - 5, height - 5)]:
-        draw.rectangle(corners, fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw_card_borders(draw, width, height, border_width)
 
     # Add minotaur artwork
     if minotaur_path:
@@ -281,19 +296,7 @@ def generate_greek_card_back(
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
-    key_size = 32
-    line_w = 3
-
-    # Draw borders (matching front)
-    draw_greek_key_border(draw, border_width, 5, width - 2 * border_width, 45, key_size=key_size, line_width=line_w)
-    draw_greek_key_border(draw, border_width, height - 50, width - 2 * border_width, 45, key_size=key_size, line_width=line_w)
-    draw_greek_key_border_vertical(draw, 5, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
-    draw_greek_key_border_vertical(draw, width - 45, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
-
-    # Corner squares
-    for corners in [(5, 5, 45, 50), (width - 45, 5, width - 5, 50),
-                    (5, height - 50, 45, height - 5), (width - 45, height - 50, width - 5, height - 5)]:
-        draw.rectangle(corners, fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw_card_borders(draw, width, height, border_width)
 
     return img
 
