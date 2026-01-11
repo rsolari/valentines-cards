@@ -405,7 +405,7 @@ def generate_greek_card_front(
 
             # Calculate area for minotaur (upper portion, leaving room for text)
             content_width = width - 2 * (border_width + 10)
-            content_height = height - 250  # Leave 250px at bottom for greeting
+            content_height = height - 220  # Leave space at bottom for greeting
             print(f"Content area: {content_width}x{content_height}")
 
             # Scale minotaur to fit
@@ -445,10 +445,22 @@ def generate_greek_card_front(
             traceback.print_exc()
 
     # Add Valentine's greeting in center-bottom area
+    import os
     from PIL import ImageFont
+
+    # Path to custom Greek-style font
+    base_dir = os.path.dirname(__file__)
+    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "CaesarDressing-Regular.ttf")
+    fallback_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Cinzel-Bold.ttf")
+
     try:
-        # Larger bold font for the Valentine's message
-        greeting_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
+        # Use decorative Greek-style font
+        if os.path.exists(greek_font_path):
+            greeting_font = ImageFont.truetype(greek_font_path, 52)
+        elif os.path.exists(fallback_font_path):
+            greeting_font = ImageFont.truetype(fallback_font_path, 46)
+        else:
+            greeting_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
     except:
         greeting_font = ImageFont.load_default()
 
@@ -461,19 +473,22 @@ def generate_greek_card_front(
     bbox = draw.textbbox((0, 0), greeting_text, font=greeting_font)
     text_width = bbox[2] - bbox[0]
     text_x = (width - text_width) // 2
-    text_y = height - 160  # Position above the credit
+    text_y = height - 145  # Position above the credit with better spacing
 
     draw.text((text_x, text_y), greeting_text, fill=PALETTE.black, font=greeting_font)
 
     # Add artist credit at bottom left
     try:
-        # Smaller font for credit
-        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12)
     except:
         credit_font = ImageFont.load_default()
 
     credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
-    draw.text((55, height - 70), credit_text, fill=PALETTE.black, font=credit_font)
+    # Center the credit text
+    credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
+    credit_width = credit_bbox[2] - credit_bbox[0]
+    credit_x = (width - credit_width) // 2
+    draw.text((credit_x, height - 75), credit_text, fill=PALETTE.black, font=credit_font)
 
     # Add texture (after compositing)
     if add_texture:
