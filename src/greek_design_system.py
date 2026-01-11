@@ -508,7 +508,7 @@ def generate_greek_card_front(
 
     # Center the whole thing horizontally
     start_x = (width - total_width) // 2
-    text_y = height - 155  # Base position
+    text_y = height - 195  # Move up to fill space between image and bottom
 
     # Draw each part, aligning baselines
     baseline_offset = h2 - h1  # Offset to align smaller text with bigger text baseline
