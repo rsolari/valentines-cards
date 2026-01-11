@@ -399,11 +399,14 @@ def generate_greek_card_front(
     # Add minotaur artwork if provided
     if minotaur_path:
         try:
+            print(f"Loading minotaur from: {minotaur_path}")
             minotaur = Image.open(minotaur_path).convert('RGBA')
+            print(f"Minotaur loaded: {minotaur.size}, mode: {minotaur.mode}")
 
             # Calculate area for minotaur (upper portion, leaving room for text)
             content_width = width - 2 * (border_width + 10)
             content_height = height - 250  # Leave 250px at bottom for greeting
+            print(f"Content area: {content_width}x{content_height}")
 
             # Scale minotaur to fit
             minotaur_ratio = minotaur.width / minotaur.height
@@ -418,28 +421,59 @@ def generate_greek_card_front(
                 new_height = content_height
                 new_width = int(content_height * minotaur_ratio)
 
+            print(f"Resizing minotaur to: {new_width}x{new_height}")
             minotaur = minotaur.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
             # Center horizontally, position in upper area
             x_pos = (width - new_width) // 2
             y_pos = 60 + (content_height - new_height) // 2
+            print(f"Pasting minotaur at position: ({x_pos}, {y_pos})")
 
-            # Composite minotaur onto card
+            # Convert base image to RGBA to properly handle transparency
+            img = img.convert('RGBA')
+
+            # Composite minotaur onto card using alpha channel
             img.paste(minotaur, (x_pos, y_pos), minotaur)
+            print("Minotaur pasted successfully!")
+
+            # Convert back to RGB for saving
+            img = img.convert('RGB')
 
         except Exception as e:
+            import traceback
             print(f"Could not load minotaur image: {e}")
+            traceback.print_exc()
 
-    # Add artist credit at bottom left
+    # Add Valentine's greeting in center-bottom area
     from PIL import ImageFont
     try:
-        # Try to use a small font
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+        # Larger bold font for the Valentine's message
+        greeting_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
     except:
-        font = ImageFont.load_default()
+        greeting_font = ImageFont.load_default()
+
+    greeting_text = "You are aMAZEing!"
+
+    # Need to recreate draw object after image mode conversion
+    draw = ImageDraw.Draw(img)
+
+    # Get text bounding box to center it
+    bbox = draw.textbbox((0, 0), greeting_text, font=greeting_font)
+    text_width = bbox[2] - bbox[0]
+    text_x = (width - text_width) // 2
+    text_y = height - 160  # Position above the credit
+
+    draw.text((text_x, text_y), greeting_text, fill=PALETTE.black, font=greeting_font)
+
+    # Add artist credit at bottom left
+    try:
+        # Smaller font for credit
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+    except:
+        credit_font = ImageFont.load_default()
 
     credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
-    draw.text((55, height - 70), credit_text, fill=PALETTE.black, font=font)
+    draw.text((55, height - 70), credit_text, fill=PALETTE.black, font=credit_font)
 
     # Add texture (after compositing)
     if add_texture:
