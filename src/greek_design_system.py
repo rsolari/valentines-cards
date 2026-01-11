@@ -343,29 +343,31 @@ def generate_greek_card_front(
 ) -> Image:
     """Generate card front with Greek pottery styling.
 
-    Layout spec (from design critique):
-    - Border: 10px stroke, inner margins 66px top/bottom, 60px left/right
-    - Header: 90px top padding, 84px gap to illustration
-    - Illustration: centered at x=375, 96px below header, 90px above pun
-    - Pun line: 90px gaps above and below
-    - Credit: 6.5pt at 82% opacity, 54px from bottom-right inner border
+    Layout spec (tightened for high-impact):
+    - Inner margins: 54px top/bottom, 48-54px left/right
+    - Header top padding: 78px from inner border
+    - Header to illustration gap: 72px
+    - Illustration: ~640px height target (58-65% of card), centered
+    - Illustration to pun gap: 72px
+    - Pun baseline to bottom inner border: 84px
+    - Credit: 6-7pt at 80-85% opacity, 48-54px from inner border
     """
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
-    # Layout constants from spec
-    INNER_MARGIN_TOP = 66
-    INNER_MARGIN_BOTTOM = 66
-    INNER_MARGIN_LEFT = 60
-    INNER_MARGIN_RIGHT = 60
-    HEADER_TOP_PADDING = 90
-    HEADER_TO_ILLUSTRATION_GAP = 84
-    ILLUSTRATION_TO_PUN_GAP = 90
-    PUN_BOTTOM_PADDING = 90
+    # Layout constants - tightened for dramatic impact
+    INNER_MARGIN_TOP = 54
+    INNER_MARGIN_BOTTOM = 54
+    INNER_MARGIN_LEFT = 48
+    INNER_MARGIN_RIGHT = 48
+    HEADER_TOP_PADDING = 78
+    HEADER_TO_ILLUSTRATION_GAP = 72
+    ILLUSTRATION_TO_PUN_GAP = 72
+    PUN_BOTTOM_PADDING = 84
     CENTER_X = width // 2  # 375
-    OPTICAL_NUDGE_X = -12
-    CREDIT_OFFSET_RIGHT = 54
-    CREDIT_OFFSET_BOTTOM = 54
+    OPTICAL_NUDGE_X = -12  # Nudge left if art mass leans right
+    CREDIT_OFFSET_RIGHT = 48
+    CREDIT_OFFSET_BOTTOM = 48
 
     draw_card_borders(draw, width, height, border_width)
 
@@ -373,9 +375,9 @@ def generate_greek_card_front(
     base_dir = os.path.dirname(os.path.abspath(__file__))
     greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
 
-    # Calculate header position
+    # Calculate header position (reduced 10% from 80pt for balance with larger art)
     try:
-        header_font = ImageFont.truetype(greek_font_path, 80)
+        header_font = ImageFont.truetype(greek_font_path, 72)
     except:
         header_font = ImageFont.load_default()
 
@@ -451,9 +453,9 @@ def generate_greek_card_front(
     draw.text((pun_start_x + w1, pun_y), part2, fill=PALETTE.black, font=big_font)
     draw.text((pun_start_x + w1 + w2, pun_y + baseline_offset), part3, fill=PALETTE.black, font=small_font)
 
-    # Artist credit (6.5pt ≈ 8-9px at 300dpi, with 82% opacity)
+    # Artist credit (6-7pt ≈ 8-10px at 300dpi, with 80-85% opacity)
     try:
-        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 9)
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
     except:
         credit_font = ImageFont.load_default()
 
@@ -463,8 +465,8 @@ def generate_greek_card_front(
     credit_x = width - INNER_MARGIN_RIGHT - CREDIT_OFFSET_RIGHT - credit_width
     credit_y = height - INNER_MARGIN_BOTTOM - CREDIT_OFFSET_BOTTOM
 
-    # Draw credit with 82% opacity (simulate by using slightly lighter color)
-    credit_color = "#363636"  # ~82% opacity black on terracotta
+    # Draw credit with ~80% opacity (slightly lighter to not compete with art)
+    credit_color = "#3D3D3D"  # ~80% opacity black on terracotta
     draw.text((credit_x, credit_y), credit_text, fill=credit_color, font=credit_font)
 
     if add_texture:
