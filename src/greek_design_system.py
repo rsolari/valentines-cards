@@ -411,7 +411,7 @@ def generate_greek_card_front(
     top_bbox = draw.textbbox((0, 0), top_text, font=top_font)
     top_text_width = top_bbox[2] - top_bbox[0]
     top_x = (width - top_text_width) // 2
-    top_y = 60  # Just below the top border
+    top_y = 56  # 8pt grid: border ends ~50, + 8px padding
     draw.text((top_x, top_y), top_text, fill=PALETTE.black, font=top_font)
 
     # Add minotaur artwork if provided
@@ -446,9 +446,13 @@ def generate_greek_card_front(
             print(f"Resizing minotaur to: {new_width}x{new_height}")
             minotaur = minotaur.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-            # Center horizontally, position in upper area
+            # Center horizontally, position below "Happy Valentines" title
             x_pos = (width - new_width) // 2
-            y_pos = 60 + (content_height - new_height) // 2
+            # Title ends ~104px, add 16px padding = 120px start for minotaur area
+            minotaur_top = 120
+            minotaur_bottom = height - 200  # Leave 200px for bottom text area
+            minotaur_area_height = minotaur_bottom - minotaur_top
+            y_pos = minotaur_top + (minotaur_area_height - new_height) // 2
             print(f"Pasting minotaur at position: ({x_pos}, {y_pos})")
 
             # Convert base image to RGBA to properly handle transparency
@@ -524,28 +528,35 @@ def generate_greek_card_front(
     h1 = bbox1[3] - bbox1[1]
     h2 = bbox2[3] - bbox2[1]
 
-    # Center the whole thing horizontally
+    # Layout: bottom zone is 850-1000 (above border)
+    # Center greeting text in zone, credit near bottom
+    bottom_zone_top = height - 200  # 850
+    bottom_zone_bottom = height - 56  # 994 (8px above border)
+
+    # Center greeting vertically in upper portion of bottom zone
+    greeting_zone_height = 120  # Space for the greeting
+    text_y = bottom_zone_top + (greeting_zone_height - h2) // 2
+
+    # Center horizontally
     start_x = (width - total_width) // 2
-    text_y = height - 250  # Move up significantly to fill space
 
     # Draw each part, aligning baselines
-    baseline_offset = h2 - h1  # Offset to align smaller text with bigger text baseline
+    baseline_offset = h2 - h1
     draw.text((start_x, text_y + baseline_offset), part1, fill=PALETTE.black, font=small_font)
     draw.text((start_x + w1, text_y), part2, fill=PALETTE.black, font=big_font)
     draw.text((start_x + w1 + w2, text_y + baseline_offset), part3, fill=PALETTE.black, font=small_font)
 
-    # Add artist credit at bottom left
+    # Artist credit - positioned 24px above bottom border
     try:
-        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12)
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11)
     except:
         credit_font = ImageFont.load_default()
 
     credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
-    # Right-align the credit text
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
     credit_width = credit_bbox[2] - credit_bbox[0]
-    credit_x = width - credit_width - 55  # Right-aligned with margin
-    draw.text((credit_x, height - 75), credit_text, fill=PALETTE.black, font=credit_font)
+    credit_x = width - credit_width - 56  # Right-aligned with 56px margin (8pt grid)
+    draw.text((credit_x, height - 72), credit_text, fill=PALETTE.black, font=credit_font)  # 72 = 56 + 16
 
     # Add texture (after compositing)
     if add_texture:
