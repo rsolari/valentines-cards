@@ -93,41 +93,33 @@ def draw_palmette(
     fg_color: str = None,
     bg_color: str = None
 ):
-    """Draw a Greek palmette (stylized fan of petals) at the given center.
+    """Draw a circular Greek palmette (stylized fan of petals) at the given center.
 
     Args:
         cx, cy: Center position
-        rotation: Angle in degrees (0=right, 90=down, 180=left, 270=up)
-                  Petals fan outward in this direction
-        size: Overall size of the palmette
+        rotation: Angle in degrees - direction the central petal points
+        size: Overall diameter of the circular palmette
     """
     import math
 
     fg = fg_color or PALETTE.black
+    bg = bg_color or PALETTE.terracotta
 
-    # Palmette has 7 petals in a fan arrangement
-    num_petals = 7
-    petal_length = size * 0.38
-    base_radius = size * 0.12
+    radius = size // 2
 
-    # Draw base arc opposite to petal direction
-    base_x1 = cx - base_radius
-    base_y1 = cy - base_radius
-    base_x2 = cx + base_radius
-    base_y2 = cy + base_radius
+    # Draw filled circle background
+    draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius],
+                 fill=bg, outline=fg, width=2)
 
-    # Arc is drawn on the opposite side of the petals
-    arc_start = rotation + 90
-    arc_end = rotation + 270
-    draw.arc([base_x1, base_y1, base_x2, base_y2], arc_start, arc_end, fill=fg, width=2)
+    # Palmette has 9 petals in a full circular arrangement
+    num_petals = 9
+    petal_length = radius * 0.7
 
-    # Draw petals in a fan pattern
-    spread_angle = 130  # Total spread in degrees
-    start_angle = rotation - spread_angle / 2
-    angle_step = spread_angle / (num_petals - 1)
+    # Draw petals radiating from center in all directions
+    angle_step = 360 / num_petals
 
     for i in range(num_petals):
-        petal_angle_deg = start_angle + i * angle_step
+        petal_angle_deg = rotation + i * angle_step
         petal_angle = math.radians(petal_angle_deg)
 
         # Calculate petal end point
@@ -594,24 +586,20 @@ def generate_greek_card_back(
         label_font = ImageFont.load_default()
 
     # The maze entrance/exit is at column (maze_cols // 2)
-    # Center of that cell is: maze_x + col * cell_size + cell_size / 2
+    # The opening spans one full cell width at that column
     entrance_col = maze_cols // 2
+    # Center of the opening = left edge of cell + half cell width
     opening_center_x = maze_x + entrance_col * cell_size + cell_size // 2
 
-    # "start" label above entrance - account for textbbox x-offset when centering
-    start_bbox = draw.textbbox((0, 0), "start", font=label_font)
-    start_width = start_bbox[2] - start_bbox[0]
-    start_x_offset = start_bbox[0]  # Text may not start at x=0
-    start_x = opening_center_x - start_width // 2 - start_x_offset
-    draw.text((start_x, maze_y - 20), "start", fill=PALETTE.black, font=label_font)
+    # "start" label above entrance - use anchor for precise centering
+    start_y = maze_y - 20
+    draw.text((opening_center_x, start_y), "start", fill=PALETTE.black,
+              font=label_font, anchor="mt")  # middle-top anchor
 
-    # "end" label below exit - account for textbbox x-offset when centering
-    exit_y = maze_y + maze_rows * cell_size
-    end_bbox = draw.textbbox((0, 0), "end", font=label_font)
-    end_width = end_bbox[2] - end_bbox[0]
-    end_x_offset = end_bbox[0]
-    end_x = opening_center_x - end_width // 2 - end_x_offset
-    draw.text((end_x, exit_y + 6), "end", fill=PALETTE.black, font=label_font)
+    # "end" label below exit - use anchor for precise centering
+    exit_y = maze_y + maze_rows * cell_size + 6
+    draw.text((opening_center_x, exit_y), "end", fill=PALETTE.black,
+              font=label_font, anchor="mt")  # middle-top anchor
 
     # Setup fonts
     base_dir = os.path.dirname(os.path.abspath(__file__))
