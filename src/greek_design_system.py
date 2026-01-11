@@ -85,6 +85,69 @@ def draw_greek_key_border(
             draw.line([(ux + step * 2, top_y + step * 2), (ux + step * 2, bottom_y - step * 2)], fill=fg, width=line_width)
 
 
+def draw_palmette(
+    draw: ImageDraw,
+    cx: int, cy: int,
+    size: int = 36,
+    rotation: int = 0,
+    fg_color: str = None,
+    bg_color: str = None
+):
+    """Draw a Greek palmette (stylized fan of petals) at the given center.
+
+    Args:
+        cx, cy: Center position
+        rotation: Angle in degrees (0=right, 90=down, 180=left, 270=up)
+                  Petals fan outward in this direction
+        size: Overall size of the palmette
+    """
+    import math
+
+    fg = fg_color or PALETTE.black
+
+    # Palmette has 7 petals in a fan arrangement
+    num_petals = 7
+    petal_length = size * 0.38
+    base_radius = size * 0.12
+
+    # Draw base arc opposite to petal direction
+    base_x1 = cx - base_radius
+    base_y1 = cy - base_radius
+    base_x2 = cx + base_radius
+    base_y2 = cy + base_radius
+
+    # Arc is drawn on the opposite side of the petals
+    arc_start = rotation + 90
+    arc_end = rotation + 270
+    draw.arc([base_x1, base_y1, base_x2, base_y2], arc_start, arc_end, fill=fg, width=2)
+
+    # Draw petals in a fan pattern
+    spread_angle = 130  # Total spread in degrees
+    start_angle = rotation - spread_angle / 2
+    angle_step = spread_angle / (num_petals - 1)
+
+    for i in range(num_petals):
+        petal_angle_deg = start_angle + i * angle_step
+        petal_angle = math.radians(petal_angle_deg)
+
+        # Calculate petal end point
+        end_x = cx + petal_length * math.cos(petal_angle)
+        end_y = cy + petal_length * math.sin(petal_angle)
+
+        # Draw petal as a line with rounded tip
+        draw.line([(cx, cy), (end_x, end_y)], fill=fg, width=2)
+
+        # Add small circle at petal tip for rounded effect
+        tip_radius = 2
+        draw.ellipse([end_x - tip_radius, end_y - tip_radius,
+                      end_x + tip_radius, end_y + tip_radius], fill=fg)
+
+    # Draw center dot
+    center_radius = 3
+    draw.ellipse([cx - center_radius, cy - center_radius,
+                  cx + center_radius, cy + center_radius], fill=fg)
+
+
 def draw_greek_key_border_vertical(
     draw: ImageDraw,
     x: int, y: int,
@@ -324,10 +387,22 @@ def draw_card_borders(
     draw_greek_key_border_vertical(draw, 5, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
     draw_greek_key_border_vertical(draw, width - 45, border_width, 40, height - 2 * border_width, key_size=key_size, line_width=line_w)
 
-    # Corner squares
-    for corners in [(5, 5, 45, 50), (width - 45, 5, width - 5, 50),
-                    (5, height - 50, 45, height - 5), (width - 45, height - 50, width - 5, height - 5)]:
-        draw.rectangle(corners, fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    # Corner palmettes pointing inward
+    # Top-left: petals point down-right (135 degrees)
+    draw.rectangle([5, 5, 45, 50], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw_palmette(draw, 25, 28, size=36, rotation=135)
+
+    # Top-right: petals point down-left (225 degrees)
+    draw.rectangle([width - 45, 5, width - 5, 50], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw_palmette(draw, width - 25, 28, size=36, rotation=225)
+
+    # Bottom-left: petals point up-right (45 degrees)
+    draw.rectangle([5, height - 50, 45, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw_palmette(draw, 25, height - 27, size=36, rotation=315)
+
+    # Bottom-right: petals point up-left (315 degrees)
+    draw.rectangle([width - 45, height - 50, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw_palmette(draw, width - 25, height - 27, size=36, rotation=45)
 
 
 # =============================================================================
