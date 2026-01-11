@@ -464,7 +464,7 @@ def generate_greek_card_front(
 
     # Add "Happy Valentines" at the top (AFTER minotaur so it's not covered)
     try:
-        top_font = ImageFont.truetype(greek_font_path, 55)  # 15% bigger than 48
+        top_font = ImageFont.truetype(greek_font_path, 63)  # 15% bigger than 55
     except:
         top_font = ImageFont.load_default()
 
@@ -473,7 +473,7 @@ def generate_greek_card_front(
     top_text_width = top_bbox[2] - top_bbox[0]
     top_x = (width - top_text_width) // 2
     top_y = 56  # Just below border
-    draw.text((top_x, top_y), top_text, fill="#FF0000", font=top_font)  # RED for testing
+    draw.text((top_x, top_y), top_text, fill=PALETTE.black, font=top_font)
 
     # Add Valentine's greeting in center-bottom area
 
