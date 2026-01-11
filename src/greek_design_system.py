@@ -403,7 +403,7 @@ def generate_greek_card_front(
     greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
 
     try:
-        top_font = ImageFont.truetype(greek_font_path, 48)
+        top_font = ImageFont.truetype(greek_font_path, 55)  # 15% bigger than 48
     except:
         top_font = ImageFont.load_default()
 
@@ -411,7 +411,7 @@ def generate_greek_card_front(
     top_bbox = draw.textbbox((0, 0), top_text, font=top_font)
     top_text_width = top_bbox[2] - top_bbox[0]
     top_x = (width - top_text_width) // 2
-    top_y = 56  # 8pt grid: border ends ~50, + 8px padding
+    top_y = 72  # Lowered from 56
     draw.text((top_x, top_y), top_text, fill=PALETTE.black, font=top_font)
 
     # Add minotaur artwork if provided
