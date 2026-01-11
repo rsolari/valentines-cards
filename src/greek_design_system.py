@@ -336,17 +336,21 @@ def add_pottery_texture(image: Image, intensity: int = 15):
 # =============================================================================
 
 def generate_greek_card_front(
-    width: int = 1050,
-    height: int = 750,
+    width: int = 750,
+    height: int = 1050,
     border_width: int = 40,
-    add_texture: bool = True
+    add_texture: bool = True,
+    minotaur_path: str = None
 ) -> Image:
     """
     Generate a card front with Greek pottery styling.
 
+    Portrait orientation (short side on top) for 3.5" x 2.5" card.
+
     Layout:
     - Greek key meander borders on all four sides
-    - Central area for minotaur art and text
+    - Minotaur artwork in upper area
+    - Space at bottom for Valentine's greeting
     """
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
@@ -392,7 +396,41 @@ def generate_greek_card_front(
     draw.rectangle([5, height - 50, 45, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
     draw.rectangle([width - 45, height - 50, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
 
-    # Add texture
+    # Add minotaur artwork if provided
+    if minotaur_path:
+        try:
+            minotaur = Image.open(minotaur_path).convert('RGBA')
+
+            # Calculate area for minotaur (upper portion, leaving room for text)
+            content_width = width - 2 * (border_width + 10)
+            content_height = height - 250  # Leave 250px at bottom for greeting
+
+            # Scale minotaur to fit
+            minotaur_ratio = minotaur.width / minotaur.height
+            content_ratio = content_width / content_height
+
+            if minotaur_ratio > content_ratio:
+                # Width constrained
+                new_width = content_width
+                new_height = int(content_width / minotaur_ratio)
+            else:
+                # Height constrained
+                new_height = content_height
+                new_width = int(content_height * minotaur_ratio)
+
+            minotaur = minotaur.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+            # Center horizontally, position in upper area
+            x_pos = (width - new_width) // 2
+            y_pos = 60 + (content_height - new_height) // 2
+
+            # Composite minotaur onto card
+            img.paste(minotaur, (x_pos, y_pos), minotaur)
+
+        except Exception as e:
+            print(f"Could not load minotaur image: {e}")
+
+    # Add texture (after compositing)
     if add_texture:
         img = add_pottery_texture(img)
 
@@ -400,8 +438,8 @@ def generate_greek_card_front(
 
 
 def generate_greek_card_back(
-    width: int = 1050,
-    height: int = 750,
+    width: int = 750,
+    height: int = 1050,
     border_width: int = 35
 ) -> Image:
     """
@@ -458,12 +496,21 @@ def generate_greek_card_back(
 def main():
     import os
 
-    output_dir = os.path.join(os.path.dirname(__file__), "..", "assets", "templates")
+    base_dir = os.path.join(os.path.dirname(__file__), "..")
+    output_dir = os.path.join(base_dir, "assets", "templates")
     os.makedirs(output_dir, exist_ok=True)
+
+    # Check for minotaur image
+    minotaur_path = os.path.join(base_dir, "assets", "pixel-art", "minotaur.png")
+    if not os.path.exists(minotaur_path):
+        minotaur_path = None
+        print("Note: No minotaur.png found in assets/pixel-art/")
+        print("      Place your minotaur image there and re-run to include it.")
+        print()
 
     print("Greek Pottery Design System")
     print("=" * 40)
-    print(f"Card size: 3.5\" x 2.5\" (1050 x 750 pixels at 300 DPI)")
+    print("Card size: 2.5\" x 3.5\" portrait (750 x 1050 pixels at 300 DPI)")
     print()
     print("Color Palette:")
     print(f"  Terracotta: {PALETTE.terracotta}")
@@ -473,7 +520,7 @@ def main():
 
     # Generate card front
     print("Generating card front template...")
-    front = generate_greek_card_front()
+    front = generate_greek_card_front(minotaur_path=minotaur_path)
     front_path = os.path.join(output_dir, "greek_card_front.png")
     front.save(front_path, dpi=(300, 300))
     print(f"Saved: {front_path}")
