@@ -454,6 +454,7 @@ def generate_greek_card_front(
     draw.text((pun_start_x + w1 + w2, pun_y + baseline_offset), part3, fill=PALETTE.black, font=small_font)
 
     # Artist credit (6-7pt ≈ 8-10px at 300dpi, with 80-85% opacity)
+    # Pinned to bottom, just above the Greek key border
     try:
         credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
     except:
@@ -462,8 +463,9 @@ def generate_greek_card_front(
     credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
     credit_width = credit_bbox[2] - credit_bbox[0]
-    credit_x = width - INNER_MARGIN_RIGHT - CREDIT_OFFSET_RIGHT - credit_width
-    credit_y = height - INNER_MARGIN_BOTTOM - CREDIT_OFFSET_BOTTOM
+    credit_height = credit_bbox[3] - credit_bbox[1]
+    credit_x = width - INNER_MARGIN_RIGHT - credit_width
+    credit_y = height - 50 - credit_height - 6  # Just above bottom border (border starts at height-50)
 
     # Draw credit with ~80% opacity (slightly lighter to not compete with art)
     credit_color = "#3D3D3D"  # ~80% opacity black on terracotta
