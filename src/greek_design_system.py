@@ -465,7 +465,7 @@ def generate_greek_card_front(
     credit_width = credit_bbox[2] - credit_bbox[0]
     credit_height = credit_bbox[3] - credit_bbox[1]
     credit_x = width - INNER_MARGIN_RIGHT - credit_width
-    credit_y = height - 50 - credit_height - 6  # Just above bottom border (border starts at height-50)
+    credit_y = height - 58 - credit_height  # Pin to bottom: border top is at height-50, text 8px above
 
     # Draw credit with ~80% opacity (slightly lighter to not compete with art)
     credit_color = "#3D3D3D"  # ~80% opacity black on terracotta
