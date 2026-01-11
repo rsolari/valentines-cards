@@ -141,6 +141,63 @@ def draw_greek_key_border(
             draw.line([(ux + step * 2, top_y + step * 2), (ux + step * 2, bottom_y - step * 2)], fill=fg, width=line_width)
 
 
+def draw_greek_key_border_vertical(
+    draw: ImageDraw,
+    x: int, y: int,
+    width: int, height: int,
+    key_size: int = 20,
+    fg_color: str = None,
+    bg_color: str = None,
+    line_width: int = 3
+):
+    """
+    Draw a vertical Greek key (meander) pattern border.
+
+    Same as horizontal but rotated 90 degrees for side borders.
+    """
+    fg = fg_color or PALETTE.black
+    bg = bg_color or PALETTE.terracotta
+
+    # Fill background
+    draw.rectangle([x, y, x + width, y + height], fill=bg)
+
+    # Calculate dimensions
+    unit_height = key_size
+    margin_x = (width - key_size) // 2
+    left_x = x + margin_x
+    right_x = x + margin_x + key_size
+
+    # Draw left and right border lines
+    draw.line([(left_x, y), (left_x, y + height)], fill=fg, width=line_width)
+    draw.line([(right_x, y), (right_x, y + height)], fill=fg, width=line_width)
+
+    # Draw the meander pattern - vertical version
+    num_units = height // unit_height
+    step = key_size // 4
+
+    for i in range(num_units):
+        uy = y + i * unit_height
+
+        if i % 2 == 0:
+            # Rightward spiral (starts from left line)
+            draw.line([(left_x, uy), (right_x - step, uy)], fill=fg, width=line_width)
+            draw.line([(right_x - step, uy), (right_x - step, uy + step * 3)], fill=fg, width=line_width)
+            draw.line([(right_x - step, uy + step * 3), (left_x + step, uy + step * 3)], fill=fg, width=line_width)
+            draw.line([(left_x + step, uy + step * 3), (left_x + step, uy + step)], fill=fg, width=line_width)
+            draw.line([(left_x + step, uy + step), (right_x - step * 2, uy + step)], fill=fg, width=line_width)
+            draw.line([(right_x - step * 2, uy + step), (right_x - step * 2, uy + step * 2)], fill=fg, width=line_width)
+            draw.line([(right_x - step * 2, uy + step * 2), (left_x + step * 2, uy + step * 2)], fill=fg, width=line_width)
+        else:
+            # Leftward spiral (starts from right line)
+            draw.line([(right_x, uy), (left_x + step, uy)], fill=fg, width=line_width)
+            draw.line([(left_x + step, uy), (left_x + step, uy + step * 3)], fill=fg, width=line_width)
+            draw.line([(left_x + step, uy + step * 3), (right_x - step, uy + step * 3)], fill=fg, width=line_width)
+            draw.line([(right_x - step, uy + step * 3), (right_x - step, uy + step)], fill=fg, width=line_width)
+            draw.line([(right_x - step, uy + step), (left_x + step * 2, uy + step)], fill=fg, width=line_width)
+            draw.line([(left_x + step * 2, uy + step), (left_x + step * 2, uy + step * 2)], fill=fg, width=line_width)
+            draw.line([(left_x + step * 2, uy + step * 2), (right_x - step * 2, uy + step * 2)], fill=fg, width=line_width)
+
+
 def draw_triangle_border(
     draw: ImageDraw,
     x: int, y: int,
@@ -288,54 +345,52 @@ def generate_greek_card_front(
     Generate a card front with Greek pottery styling.
 
     Layout:
-    - Outer triangle border
-    - Greek key border
-    - Inner dot border
+    - Greek key meander borders on all four sides
     - Central area for minotaur art and text
     """
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
-    # Outer black border line
-    draw.rectangle([0, 0, width-1, height-1], outline=PALETTE.black, width=3)
+    key_size = 32
+    line_w = 3
 
-    # Top border - triangles pointing down
-    draw_triangle_border(
+    # Top border - horizontal meander
+    draw_greek_key_border(
         draw, border_width, 5,
-        width - 2 * border_width, 30,
-        triangle_width=22, pointing="down"
+        width - 2 * border_width, 45,
+        key_size=key_size,
+        line_width=line_w
     )
 
-    # Bottom border - triangles pointing up
-    draw_triangle_border(
-        draw, border_width, height - 35,
-        width - 2 * border_width, 30,
-        triangle_width=22, pointing="up"
-    )
-
-    # Greek key border below top triangles
+    # Bottom border - horizontal meander
     draw_greek_key_border(
-        draw, border_width, 38,
-        width - 2 * border_width, 40,
-        key_size=32,
-        line_width=3
+        draw, border_width, height - 50,
+        width - 2 * border_width, 45,
+        key_size=key_size,
+        line_width=line_w
     )
 
-    # Greek key border above bottom triangles
-    draw_greek_key_border(
-        draw, border_width, height - 78,
-        width - 2 * border_width, 40,
-        key_size=32,
-        line_width=3
+    # Left side - vertical meander
+    draw_greek_key_border_vertical(
+        draw, 5, border_width,
+        40, height - 2 * border_width,
+        key_size=key_size,
+        line_width=line_w
     )
 
-    # Left side decorative border (vertical dots)
-    for i in range(10, height - 40, 20):
-        draw.ellipse([12, i, 22, i + 10], fill=PALETTE.black)
+    # Right side - vertical meander
+    draw_greek_key_border_vertical(
+        draw, width - 45, border_width,
+        40, height - 2 * border_width,
+        key_size=key_size,
+        line_width=line_w
+    )
 
-    # Right side decorative border (vertical dots)
-    for i in range(10, height - 40, 20):
-        draw.ellipse([width - 22, i, width - 12, i + 10], fill=PALETTE.black)
+    # Corner squares to connect borders
+    draw.rectangle([5, 5, 45, 50], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([width - 45, 5, width - 5, 50], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([5, height - 50, 45, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([width - 45, height - 50, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
 
     # Add texture
     if add_texture:
@@ -347,35 +402,55 @@ def generate_greek_card_front(
 def generate_greek_card_back(
     width: int = 1050,
     height: int = 750,
-    border_width: int = 30
+    border_width: int = 35
 ) -> Image:
     """
     Generate a card back template for the maze.
-    Simpler borders to leave room for the maze.
+    Meander borders on all sides, leaving room for the maze.
     """
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
-    # Simple black border
-    draw.rectangle([0, 0, width-1, height-1], outline=PALETTE.black, width=4)
+    key_size = 28
+    line_w = 2
 
-    # Triangle borders only
-    draw_triangle_border(
-        draw, 10, 8,
-        width - 20, 25,
-        triangle_width=20, pointing="down"
+    # Top border - horizontal meander
+    draw_greek_key_border(
+        draw, border_width, 5,
+        width - 2 * border_width, 35,
+        key_size=key_size,
+        line_width=line_w
     )
 
-    draw_triangle_border(
-        draw, 10, height - 33,
-        width - 20, 25,
-        triangle_width=20, pointing="up"
+    # Bottom border - horizontal meander
+    draw_greek_key_border(
+        draw, border_width, height - 40,
+        width - 2 * border_width, 35,
+        key_size=key_size,
+        line_width=line_w
     )
 
-    # Side dots
-    for i in range(15, height - 35, 18):
-        draw.ellipse([8, i, 16, i + 8], fill=PALETTE.black)
-        draw.ellipse([width - 16, i, width - 8, i + 8], fill=PALETTE.black)
+    # Left side - vertical meander
+    draw_greek_key_border_vertical(
+        draw, 5, border_width,
+        32, height - 2 * border_width,
+        key_size=key_size,
+        line_width=line_w
+    )
+
+    # Right side - vertical meander
+    draw_greek_key_border_vertical(
+        draw, width - 37, border_width,
+        32, height - 2 * border_width,
+        key_size=key_size,
+        line_width=line_w
+    )
+
+    # Corner squares
+    draw.rectangle([5, 5, 37, 40], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([width - 37, 5, width - 5, 40], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([5, height - 40, 37, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([width - 37, height - 40, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
 
     return img
 
