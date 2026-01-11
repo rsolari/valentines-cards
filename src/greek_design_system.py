@@ -511,6 +511,14 @@ def main():
     output_dir = os.path.join(base_dir, "assets", "templates")
     os.makedirs(output_dir, exist_ok=True)
 
+    # Delete existing templates to ensure fresh generation
+    front_path = os.path.join(output_dir, "greek_card_front.png")
+    back_path = os.path.join(output_dir, "greek_card_back.png")
+    for path in [front_path, back_path]:
+        if os.path.exists(path):
+            os.remove(path)
+            print(f"Deleted: {path}")
+
     # Check for minotaur image
     minotaur_path = os.path.join(base_dir, "assets", "artwork", "minotaur.png")
     if not os.path.exists(minotaur_path):
