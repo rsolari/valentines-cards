@@ -62,10 +62,13 @@ def draw_greek_key_border(
     key_size: int = 20,
     fg_color: str = None,
     bg_color: str = None,
-    direction: str = "horizontal"
+    line_width: int = 3
 ):
     """
-    Draw a Greek key (meander) pattern border.
+    Draw an authentic Greek key (meander) pattern border.
+
+    This creates the classic square-spiral meander pattern seen on
+    ancient Greek pottery like white-ground lekythoi.
 
     The meander is one of the most important symbols in Greek art,
     representing infinity, unity, and the eternal flow of life.
@@ -74,10 +77,10 @@ def draw_greek_key_border(
         draw: PIL ImageDraw object
         x, y: Top-left corner position
         width, height: Dimensions of the border area
-        key_size: Size of each key unit
+        key_size: Size of each key unit (the square spiral)
         fg_color: Foreground (line) color
         bg_color: Background color
-        direction: "horizontal" or "vertical"
+        line_width: Thickness of the lines
     """
     fg = fg_color or PALETTE.black
     bg = bg_color or PALETTE.terracotta
@@ -85,51 +88,57 @@ def draw_greek_key_border(
     # Fill background
     draw.rectangle([x, y, x + width, y + height], fill=bg)
 
-    line_width = max(2, key_size // 6)
+    # Calculate dimensions
+    unit_width = key_size
+    margin_y = (height - key_size) // 2
+    top_y = y + margin_y
+    bottom_y = y + margin_y + key_size
 
-    if direction == "horizontal":
-        # Draw horizontal meander
-        unit_width = key_size * 2
-        num_units = width // unit_width + 1
+    # Draw top and bottom border lines
+    draw.line([(x, top_y), (x + width, top_y)], fill=fg, width=line_width)
+    draw.line([(x, bottom_y), (x + width, bottom_y)], fill=fg, width=line_width)
 
-        for i in range(num_units):
-            ux = x + i * unit_width
-            uy = y + height // 2 - key_size // 2
+    # Draw the meander pattern - authentic square spiral style
+    # Each unit is a square spiral that hooks down then back up
+    num_units = width // unit_width
 
-            # Draw one meander unit (simplified Greek key)
-            # This creates the classic stepped spiral pattern
-            points = [
-                # Bottom horizontal line
-                (ux, uy + key_size),
-                (ux + key_size, uy + key_size),
-                # Up
-                (ux + key_size, uy + key_size // 2),
-                # Left
-                (ux + key_size // 2, uy + key_size // 2),
-                # Up
-                (ux + key_size // 2, uy),
-                # Right to end
-                (ux + unit_width, uy),
-            ]
+    step = key_size // 4  # Size of each step in the spiral
 
-            # Draw as connected lines
-            for j in range(len(points) - 1):
-                draw.line([points[j], points[j + 1]], fill=fg, width=line_width)
+    for i in range(num_units):
+        ux = x + i * unit_width
 
-            # Mirror pattern for second half
-            points2 = [
-                (ux + unit_width, uy),
-                (ux + unit_width, uy + key_size // 2),
-                (ux + key_size + key_size // 2, uy + key_size // 2),
-                (ux + key_size + key_size // 2, uy + key_size),
-                (ux + unit_width, uy + key_size),
-            ]
-            for j in range(len(points2) - 1):
-                draw.line([points2[j], points2[j + 1]], fill=fg, width=line_width)
-
-    # Draw border lines
-    draw.line([(x, y), (x + width, y)], fill=fg, width=line_width)
-    draw.line([(x, y + height), (x + width, y + height)], fill=fg, width=line_width)
+        if i % 2 == 0:
+            # Downward spiral (starts from top line)
+            # Vertical down from top
+            draw.line([(ux, top_y), (ux, bottom_y - step)], fill=fg, width=line_width)
+            # Hook right
+            draw.line([(ux, bottom_y - step), (ux + step * 3, bottom_y - step)], fill=fg, width=line_width)
+            # Hook up
+            draw.line([(ux + step * 3, bottom_y - step), (ux + step * 3, top_y + step)], fill=fg, width=line_width)
+            # Hook left (inner)
+            draw.line([(ux + step * 3, top_y + step), (ux + step, top_y + step)], fill=fg, width=line_width)
+            # Down to center
+            draw.line([(ux + step, top_y + step), (ux + step, bottom_y - step * 2)], fill=fg, width=line_width)
+            # Right to inner
+            draw.line([(ux + step, bottom_y - step * 2), (ux + step * 2, bottom_y - step * 2)], fill=fg, width=line_width)
+            # Up to connect
+            draw.line([(ux + step * 2, bottom_y - step * 2), (ux + step * 2, top_y + step * 2)], fill=fg, width=line_width)
+        else:
+            # Upward spiral (starts from bottom line)
+            # Vertical up from bottom
+            draw.line([(ux, bottom_y), (ux, top_y + step)], fill=fg, width=line_width)
+            # Hook right
+            draw.line([(ux, top_y + step), (ux + step * 3, top_y + step)], fill=fg, width=line_width)
+            # Hook down
+            draw.line([(ux + step * 3, top_y + step), (ux + step * 3, bottom_y - step)], fill=fg, width=line_width)
+            # Hook left (inner)
+            draw.line([(ux + step * 3, bottom_y - step), (ux + step, bottom_y - step)], fill=fg, width=line_width)
+            # Up to center
+            draw.line([(ux + step, bottom_y - step), (ux + step, top_y + step * 2)], fill=fg, width=line_width)
+            # Right to inner
+            draw.line([(ux + step, top_y + step * 2), (ux + step * 2, top_y + step * 2)], fill=fg, width=line_width)
+            # Down to connect
+            draw.line([(ux + step * 2, top_y + step * 2), (ux + step * 2, bottom_y - step * 2)], fill=fg, width=line_width)
 
 
 def draw_triangle_border(
@@ -306,16 +315,18 @@ def generate_greek_card_front(
 
     # Greek key border below top triangles
     draw_greek_key_border(
-        draw, border_width, 40,
-        width - 2 * border_width, 35,
-        key_size=15
+        draw, border_width, 38,
+        width - 2 * border_width, 40,
+        key_size=32,
+        line_width=3
     )
 
     # Greek key border above bottom triangles
     draw_greek_key_border(
-        draw, border_width, height - 75,
-        width - 2 * border_width, 35,
-        key_size=15
+        draw, border_width, height - 78,
+        width - 2 * border_width, 40,
+        key_size=32,
+        line_width=3
     )
 
     # Left side decorative border (vertical dots)
