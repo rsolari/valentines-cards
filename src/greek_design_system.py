@@ -396,6 +396,24 @@ def generate_greek_card_front(
     draw.rectangle([5, height - 50, 45, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
     draw.rectangle([width - 45, height - 50, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
 
+    # Add "Happy Valentines" at the top
+    import os
+    from PIL import ImageFont
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
+
+    try:
+        top_font = ImageFont.truetype(greek_font_path, 48)
+    except:
+        top_font = ImageFont.load_default()
+
+    top_text = "Happy Valentines"
+    top_bbox = draw.textbbox((0, 0), top_text, font=top_font)
+    top_text_width = top_bbox[2] - top_bbox[0]
+    top_x = (width - top_text_width) // 2
+    top_y = 60  # Just below the top border
+    draw.text((top_x, top_y), top_text, fill=PALETTE.black, font=top_font)
+
     # Add minotaur artwork if provided
     if minotaur_path:
         try:
