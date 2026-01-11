@@ -241,7 +241,7 @@ def generate_greek_card_front(
     except:
         top_font = ImageFont.load_default()
 
-    top_text = "Happy Valentines"
+    top_text = "Happy Valentine's"
     top_bbox = draw.textbbox((0, 0), top_text, font=top_font)
     top_x = (width - (top_bbox[2] - top_bbox[0])) // 2
     draw.text((top_x, 70), top_text, fill=PALETTE.black, font=top_font)
