@@ -539,7 +539,7 @@ def generate_greek_card_front(
 def generate_greek_card_back(
     width: int = 750,
     height: int = 1050,
-    border_width: int = 35
+    border_width: int = 40
 ) -> Image:
     """
     Generate a card back template for the maze.
@@ -548,21 +548,22 @@ def generate_greek_card_back(
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
-    key_size = 28
-    line_w = 2
+    # Match front card border settings exactly
+    key_size = 32
+    line_w = 3
 
     # Top border - horizontal meander
     draw_greek_key_border(
         draw, border_width, 5,
-        width - 2 * border_width, 35,
+        width - 2 * border_width, 45,
         key_size=key_size,
         line_width=line_w
     )
 
     # Bottom border - horizontal meander
     draw_greek_key_border(
-        draw, border_width, height - 40,
-        width - 2 * border_width, 35,
+        draw, border_width, height - 50,
+        width - 2 * border_width, 45,
         key_size=key_size,
         line_width=line_w
     )
@@ -570,24 +571,24 @@ def generate_greek_card_back(
     # Left side - vertical meander
     draw_greek_key_border_vertical(
         draw, 5, border_width,
-        32, height - 2 * border_width,
+        40, height - 2 * border_width,
         key_size=key_size,
         line_width=line_w
     )
 
     # Right side - vertical meander
     draw_greek_key_border_vertical(
-        draw, width - 37, border_width,
-        32, height - 2 * border_width,
+        draw, width - 45, border_width,
+        40, height - 2 * border_width,
         key_size=key_size,
         line_width=line_w
     )
 
-    # Corner squares
-    draw.rectangle([5, 5, 37, 40], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
-    draw.rectangle([width - 37, 5, width - 5, 40], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
-    draw.rectangle([5, height - 40, 37, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
-    draw.rectangle([width - 37, height - 40, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    # Corner squares - match front exactly
+    draw.rectangle([5, 5, 45, 50], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([width - 45, 5, width - 5, 50], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([5, height - 50, 45, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
+    draw.rectangle([width - 45, height - 50, width - 5, height - 5], fill=PALETTE.terracotta, outline=PALETTE.black, width=line_w)
 
     return img
 
