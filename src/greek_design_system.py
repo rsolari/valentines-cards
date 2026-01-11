@@ -473,7 +473,7 @@ def generate_greek_card_back(
 
     # Generate and draw maze
     grid = generate_maze(maze_rows, maze_cols)
-    draw_maze(draw, grid, maze_x, maze_y, cell_size, tile_size=6, gap=2, wall_color="#C4A35A")
+    draw_maze(draw, grid, maze_x, maze_y, cell_size, tile_size=6, gap=2)
 
     # Setup fonts
     base_dir = os.path.dirname(os.path.abspath(__file__))
