@@ -479,11 +479,14 @@ def generate_greek_card_front(
     draw = ImageDraw.Draw(img)
 
     # Render text in parts: "You are a" + "MAZE" (bigger) + "ing!"
-    small_font = greeting_font  # 72pt
     try:
-        big_font = ImageFont.truetype(greek_font_path, 96)  # Larger for MAZE
-    except:
-        big_font = small_font
+        small_font = ImageFont.truetype(greek_font_path, 42)  # Smaller for surrounding text
+        big_font = ImageFont.truetype(greek_font_path, 90)    # Much larger for MAZE
+        print(f"Small font: 42pt, Big font: 90pt")
+    except Exception as e:
+        print(f"Font size error: {e}")
+        small_font = greeting_font
+        big_font = greeting_font
 
     part1 = "You are a"
     part2 = "MAZE"
