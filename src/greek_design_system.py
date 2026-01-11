@@ -512,6 +512,25 @@ def generate_greek_card_back(
     grid = generate_maze(maze_rows, maze_cols)
     draw_maze(draw, grid, maze_x, maze_y, cell_size, tile_size=6, gap=2)
 
+    # Add "start" and "end" labels
+    try:
+        label_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+    except:
+        label_font = ImageFont.load_default()
+
+    # "start" label above entrance (top center)
+    entrance_x = maze_x + (maze_cols // 2) * cell_size + cell_size // 2
+    start_bbox = draw.textbbox((0, 0), "start", font=label_font)
+    start_width = start_bbox[2] - start_bbox[0]
+    draw.text((entrance_x - start_width // 2, maze_y - 20), "start", fill=PALETTE.black, font=label_font)
+
+    # "end" label below exit (bottom center)
+    exit_x = maze_x + (maze_cols // 2) * cell_size + cell_size // 2
+    exit_y = maze_y + maze_rows * cell_size
+    end_bbox = draw.textbbox((0, 0), "end", font=label_font)
+    end_width = end_bbox[2] - end_bbox[0]
+    draw.text((exit_x - end_width // 2, exit_y + 6), "end", fill=PALETTE.black, font=label_font)
+
     # Setup fonts
     base_dir = os.path.dirname(os.path.abspath(__file__))
     greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
@@ -534,7 +553,7 @@ def generate_greek_card_back(
     except:
         credit_font = ImageFont.load_default()
 
-    credit_text = "designed by Felix and his mom"
+    credit_text = "designed by Felix and his mom, Meghan"
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
     credit_x = (width - (credit_bbox[2] - credit_bbox[0])) // 2
     credit_y = height - 70
@@ -544,6 +563,57 @@ def generate_greek_card_back(
         img = add_pottery_texture(img)
 
     return img
+
+
+def generate_printable_sheet(
+    card_front: Image,
+    card_back: Image,
+    page_width_in: float = 8.5,
+    page_height_in: float = 11,
+    dpi: int = 300
+) -> tuple:
+    """Generate front and back sheets for double-sided printing.
+
+    Returns (front_sheet, back_sheet) images.
+    Cards are 2.5" x 3.5", arranged on letter-size paper.
+    Back sheet is horizontally mirrored so cards align when printed double-sided.
+    """
+    page_width = int(page_width_in * dpi)
+    page_height = int(page_height_in * dpi)
+    card_width, card_height = card_front.size
+
+    # Calculate grid: how many cards fit
+    margin = 50  # pixels between cards and from edges
+    cols = (page_width - margin) // (card_width + margin)
+    rows = (page_height - margin) // (card_height + margin)
+
+    # Center the grid on the page
+    total_cards_width = cols * card_width + (cols - 1) * margin
+    total_cards_height = rows * card_height + (rows - 1) * margin
+    start_x = (page_width - total_cards_width) // 2
+    start_y = (page_height - total_cards_height) // 2
+
+    # Create front sheet (white background)
+    front_sheet = Image.new('RGB', (page_width, page_height), '#FFFFFF')
+
+    for row in range(rows):
+        for col in range(cols):
+            x = start_x + col * (card_width + margin)
+            y = start_y + row * (card_height + margin)
+            front_sheet.paste(card_front, (x, y))
+
+    # Create back sheet (mirrored horizontally for double-sided alignment)
+    back_sheet = Image.new('RGB', (page_width, page_height), '#FFFFFF')
+
+    for row in range(rows):
+        for col in range(cols):
+            # Mirror horizontally: rightmost card on front = leftmost on back
+            mirrored_col = cols - 1 - col
+            x = start_x + mirrored_col * (card_width + margin)
+            y = start_y + row * (card_height + margin)
+            back_sheet.paste(card_back, (x, y))
+
+    return front_sheet, back_sheet
 
 
 def main():
@@ -568,6 +638,14 @@ def main():
     back = generate_greek_card_back()
     back.save(os.path.join(output_dir, "greek_card_back.png"), dpi=(300, 300))
     print("Saved: greek_card_back.png")
+
+    # Generate printable sheets for double-sided printing
+    front_sheet, back_sheet = generate_printable_sheet(front, back)
+    front_sheet.save(os.path.join(output_dir, "print_fronts.png"), dpi=(300, 300))
+    print("Saved: print_fronts.png (8.5x11 sheet with card fronts)")
+
+    back_sheet.save(os.path.join(output_dir, "print_backs.png"), dpi=(300, 300))
+    print("Saved: print_backs.png (8.5x11 sheet with card backs - flip on long edge)")
 
 
 if __name__ == "__main__":
