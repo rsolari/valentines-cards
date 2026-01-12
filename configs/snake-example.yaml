@@ -33,14 +33,14 @@ front_text:
   pun_suffix: "-geous!"
   pun_font_size: 42
   pun_emphasis_font_size: 90
-  credit: ""
+  credit: "art by Andrew Morris vanmorrisman@yahoo.co.uk"
   credit_font_size: 10
 
 # Back card text
 back_text:
   message: "From Your Valentine"
   message_font_size: 42
-  credit: ""
+  credit: "designed by Felix and his mom, Meghan"
   credit_font_size: 10
   start_label: "start"
   end_label: "end"
