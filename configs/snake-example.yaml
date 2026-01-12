@@ -28,9 +28,9 @@ colors:
 front_text:
   header: "Happy Valentine's"
   header_font_size: 72
-  pun_prefix: "I'm "
-  pun_emphasis: "SSSO"
-  pun_suffix: " glad you're mine!"
+  pun_prefix: "You're "
+  pun_emphasis: "GORGON"
+  pun_suffix: "-geous!"
   pun_font_size: 42
   pun_emphasis_font_size: 90
   credit: ""
