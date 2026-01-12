@@ -600,28 +600,6 @@ def generate_greek_card_back(
     # Draw maze using the renderer
     renderer.draw_maze(draw, grid, maze_x, maze_y, cell_size)
 
-    # For snake wall type, add snake head at entrance and tail at exit
-    if wall_type == "snake":
-        from wall_renderers import SnakeWallRenderer
-
-        # Calculate entrance/exit positions - connect to the wall openings
-        entrance_col = maze_cols // 2
-        # Head connects at the top of the maze entrance gap
-        entrance_x = maze_x + entrance_col * cell_size + cell_size // 2
-        entrance_y = maze_y  # Right at the top edge of maze
-
-        # Tail connects at the bottom of the maze exit gap
-        exit_x = entrance_x
-        exit_y = maze_y + maze_rows * cell_size  # Right at the bottom edge of maze
-
-        # Draw snake head entering the maze (pointing down, connected to entrance)
-        head_size = cell_size - 4  # Size to fit the opening
-        SnakeWallRenderer.draw_snake_head(draw, entrance_x, entrance_y - head_size // 2, head_size, wall_color, "down")
-
-        # Draw snake tail exiting the maze (pointing down, connected to exit)
-        tail_size = cell_size - 8
-        SnakeWallRenderer.draw_snake_tail(draw, exit_x, exit_y + tail_size // 2 + 5, tail_size, wall_color, "down")
-
     # Get text settings from config or use defaults
     if config:
         start_label = config.back_text.start_label
