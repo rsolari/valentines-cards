@@ -645,7 +645,6 @@ def generate_greek_card_back(
 
 def generate_printable_sheet(
     card_front: Image,
-    card_back: Image,
     page_width_in: float = 8.5,
     page_height_in: float = 11,
     dpi: int = 300
@@ -655,6 +654,7 @@ def generate_printable_sheet(
     Returns (front_sheet, back_sheet) images.
     Cards are 2.5" x 3.5", arranged on letter-size paper.
     Back sheet is horizontally mirrored so cards align when printed double-sided.
+    Each card on the back gets a unique maze.
     """
     page_width = int(page_width_in * dpi)
     page_height = int(page_height_in * dpi)
@@ -681,10 +681,13 @@ def generate_printable_sheet(
             front_sheet.paste(card_front, (x, y))
 
     # Create back sheet (mirrored horizontally for double-sided alignment)
+    # Each card gets a unique maze
     back_sheet = Image.new('RGB', (page_width, page_height), '#FFFFFF')
 
     for row in range(rows):
         for col in range(cols):
+            # Generate a fresh back card with unique maze
+            card_back = generate_greek_card_back()
             # Mirror horizontally: rightmost card on front = leftmost on back
             mirrored_col = cols - 1 - col
             x = start_x + mirrored_col * (card_width + margin)
@@ -717,13 +720,14 @@ def main():
     back.save(os.path.join(output_dir, "greek_card_back.png"), dpi=(300, 300))
     print("Saved: greek_card_back.png")
 
-    # Generate printable sheets for double-sided printing
-    front_sheet, back_sheet = generate_printable_sheet(front, back)
-    front_sheet.save(os.path.join(output_dir, "print_fronts.png"), dpi=(300, 300))
-    print("Saved: print_fronts.png (8.5x11 sheet with card fronts)")
+    # Generate 3 printable sheets for double-sided printing (each back has unique mazes)
+    for sheet_num in range(1, 4):
+        front_sheet, back_sheet = generate_printable_sheet(front)
+        front_sheet.save(os.path.join(output_dir, f"print_fronts_{sheet_num}.png"), dpi=(300, 300))
+        print(f"Saved: print_fronts_{sheet_num}.png (8.5x11 sheet with card fronts)")
 
-    back_sheet.save(os.path.join(output_dir, "print_backs.png"), dpi=(300, 300))
-    print("Saved: print_backs.png (8.5x11 sheet with card backs - flip on long edge)")
+        back_sheet.save(os.path.join(output_dir, f"print_backs_{sheet_num}.png"), dpi=(300, 300))
+        print(f"Saved: print_backs_{sheet_num}.png (8.5x11 sheet with unique mazes - flip on long edge)")
 
 
 if __name__ == "__main__":
