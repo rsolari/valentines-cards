@@ -586,20 +586,30 @@ def generate_greek_card_back(
         label_font = ImageFont.load_default()
 
     # The maze entrance/exit is at column (maze_cols // 2)
-    # The opening spans one full cell width at that column
+    # The visual gap differs from cell boundaries due to mosaic tile drawing:
+    # - Tiles are 6px wide with 2px gaps between them
+    # - Last tile of prev column ends at (cell_boundary - 2), gap starts at (cell_boundary - 1)
+    # - First tile of next column starts exactly at cell_boundary
+    # So visual gap is from (entrance_col * cell_size - 1) to ((entrance_col + 1) * cell_size - 1)
     entrance_col = maze_cols // 2
-    # Center of the opening = left edge of cell + half cell width
-    opening_center_x = maze_x + entrance_col * cell_size + cell_size // 2
+    gap_visual_left = maze_x + entrance_col * cell_size - 1
+    gap_visual_right = maze_x + (entrance_col + 1) * cell_size - 1
+    gap_center_x = (gap_visual_left + gap_visual_right) // 2
 
-    # "start" label above entrance - use anchor for precise centering
-    start_y = maze_y - 20
-    draw.text((opening_center_x, start_y), "start", fill=PALETTE.black,
-              font=label_font, anchor="mt")  # middle-top anchor
+    # "start" label above entrance - manually center using textbbox
+    start_text = "start"
+    start_bbox = draw.textbbox((0, 0), start_text, font=label_font)
+    start_text_width = start_bbox[2] - start_bbox[0]
+    start_x = gap_center_x - start_text_width // 2
+    draw.text((start_x, maze_y - 20), start_text, fill=PALETTE.black, font=label_font)
 
-    # "end" label below exit - use anchor for precise centering
+    # "end" label below exit - manually center using textbbox
+    end_text = "end"
+    end_bbox = draw.textbbox((0, 0), end_text, font=label_font)
+    end_text_width = end_bbox[2] - end_bbox[0]
+    end_x = gap_center_x - end_text_width // 2
     exit_y = maze_y + maze_rows * cell_size + 6
-    draw.text((opening_center_x, exit_y), "end", fill=PALETTE.black,
-              font=label_font, anchor="mt")  # middle-top anchor
+    draw.text((end_x, exit_y), end_text, fill=PALETTE.black, font=label_font)
 
     # Setup fonts
     base_dir = os.path.dirname(os.path.abspath(__file__))
