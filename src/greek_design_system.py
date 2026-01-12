@@ -604,7 +604,7 @@ def generate_greek_card_back(
 
     # Add small minotaur icon at maze entrance
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    minotaur_icon_path = os.path.join(base_dir, "..", "assets", "artwork", "minotaur.png")
+    minotaur_icon_path = os.path.join(base_dir, "..", "assets", "artwork", "minotaur_icon.png")
     if os.path.exists(minotaur_icon_path):
         try:
             minotaur_icon = Image.open(minotaur_icon_path).convert('RGBA')
