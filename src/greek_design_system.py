@@ -602,25 +602,6 @@ def generate_greek_card_back(
     start_x = gap_center_x - start_length / 2 + 1  # +1 compensates for font rendering offset
     draw.text((start_x, maze_y - 20), start_text, fill=PALETTE.black, font=label_font)
 
-    # Add small minotaur icon at maze entrance
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    minotaur_icon_path = os.path.join(base_dir, "..", "assets", "artwork", "minotaur_icon.png")
-    if os.path.exists(minotaur_icon_path):
-        try:
-            minotaur_icon = Image.open(minotaur_icon_path).convert('RGBA')
-            # Resize to small icon (fits within maze cell)
-            icon_size = 28
-            minotaur_icon = minotaur_icon.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
-            # Position at entrance cell, centered horizontally
-            icon_x = gap_center_x - icon_size // 2
-            icon_y = maze_y + 4  # Just inside the maze entrance
-            img = img.convert('RGBA')
-            img.paste(minotaur_icon, (int(icon_x), icon_y), minotaur_icon)
-            img = img.convert('RGB')
-            draw = ImageDraw.Draw(img)  # Recreate draw object after conversion
-        except Exception as e:
-            print(f"Could not load minotaur icon: {e}")
-
     # "end" label below exit - use textlength with +1 adjustment for font rendering
     end_text = "end"
     end_length = draw.textlength(end_text, font=label_font)
