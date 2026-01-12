@@ -7,8 +7,8 @@ name: snake
 description: Snake-themed card with serpent scale maze walls
 
 # Hero image - replace with snake artwork when available
-hero_image: medusa.png  # TODO: Add snake.png to assets/artwork/
-hero_nudge_x: 0
+hero_image: medusa.png
+hero_nudge_x: 20  # Nudge right to center
 
 # Card dimensions (at 300 DPI)
 width: 750
@@ -20,7 +20,7 @@ border_width: 40
 
 # Color palette - Forest/jungle inspired for snakes
 colors:
-  primary: "#2D5A27"    # Forest green - main background
+  primary: "#5A8057"    # Lighter forest green - main background
   secondary: "#1A1A1A"  # Black - text and outlines
   accent: "#90EE90"     # Light green
 
@@ -38,7 +38,7 @@ front_text:
 
 # Back card text
 back_text:
-  message: "From Your Valentine"
+  message: "FROM FELIX"
   message_font_size: 42
   credit: "designed by Felix and his mom, Meghan"
   credit_font_size: 10
