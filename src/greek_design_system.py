@@ -726,6 +726,67 @@ def generate_printable_sheet(
     return front_sheet, back_sheet
 
 
+def generate_postcard_sheet(
+    card_front: Image,
+    config: Optional[CardConfig] = None,
+    page_width_in: float = 6.0,
+    page_height_in: float = 9.0,
+    dpi: int = 300
+) -> tuple:
+    """Generate front and back sheets for 6x9 postcard printing.
+
+    Returns (front_sheet, back_sheet) images.
+    Cards are 2.5" x 3.5", arranged on 6" x 9" postcard paper.
+    Back sheet is horizontally mirrored so cards align when printed double-sided.
+    Each card on the back gets a unique maze.
+
+    A 6x9 postcard fits 2x2 = 4 cards.
+    """
+    page_width = int(page_width_in * dpi)   # 1800 pixels
+    page_height = int(page_height_in * dpi)  # 2700 pixels
+    card_width, card_height = card_front.size
+
+    # Calculate grid: 2x2 cards fit on 6x9
+    margin = 30  # pixels between cards and from edges (smaller for postcard)
+    cols = (page_width - margin) // (card_width + margin)
+    rows = (page_height - margin) // (card_height + margin)
+
+    # Ensure we don't exceed 2x2 (the max that reasonably fits)
+    cols = min(cols, 2)
+    rows = min(rows, 2)
+
+    # Center the grid on the page
+    total_cards_width = cols * card_width + (cols - 1) * margin
+    total_cards_height = rows * card_height + (rows - 1) * margin
+    start_x = (page_width - total_cards_width) // 2
+    start_y = (page_height - total_cards_height) // 2
+
+    # Create front sheet (white background)
+    front_sheet = Image.new('RGB', (page_width, page_height), '#FFFFFF')
+
+    for row in range(rows):
+        for col in range(cols):
+            x = start_x + col * (card_width + margin)
+            y = start_y + row * (card_height + margin)
+            front_sheet.paste(card_front, (x, y))
+
+    # Create back sheet (mirrored horizontally for double-sided alignment)
+    # Each card gets a unique maze
+    back_sheet = Image.new('RGB', (page_width, page_height), '#FFFFFF')
+
+    for row in range(rows):
+        for col in range(cols):
+            # Generate a fresh back card with unique maze
+            card_back = generate_greek_card_back(config=config)
+            # Mirror horizontally: rightmost card on front = leftmost on back
+            mirrored_col = cols - 1 - col
+            x = start_x + mirrored_col * (card_width + margin)
+            y = start_y + row * (card_height + margin)
+            back_sheet.paste(card_back, (x, y))
+
+    return front_sheet, back_sheet
+
+
 def main():
     """Main entry point - supports both config file and legacy operation."""
     parser = argparse.ArgumentParser(
@@ -756,6 +817,11 @@ Examples:
         type=int,
         default=3,
         help='Number of printable sheets to generate (default: 3)'
+    )
+    parser.add_argument(
+        '--postcard',
+        action='store_true',
+        help='Generate 6x9 inch postcard layouts (4 cards per postcard) instead of 8.5x11 sheets'
     )
 
     args = parser.parse_args()
@@ -843,6 +909,37 @@ Examples:
             append_images=all_pages[1:]
         )
         print(f"Saved: {pdf_filename} (combined PDF - print double-sided, flip on long edge)")
+
+    # Generate 6x9 postcard sheets if requested
+    if args.postcard:
+        print("\nGenerating 6x9 postcard layouts...")
+        postcard_pages = []  # For combined postcard PDF
+        for sheet_num in range(1, args.sheets + 1):
+            front_sheet, back_sheet = generate_postcard_sheet(front, config=config)
+            front_sheet_filename = f"{config.name}_postcard_fronts_{sheet_num}.png"
+            front_sheet.save(os.path.join(output_dir, front_sheet_filename), dpi=(300, 300))
+            print(f"Saved: {front_sheet_filename} (6x9 postcard with 4 card fronts)")
+
+            back_sheet_filename = f"{config.name}_postcard_backs_{sheet_num}.png"
+            back_sheet.save(os.path.join(output_dir, back_sheet_filename), dpi=(300, 300))
+            print(f"Saved: {back_sheet_filename} (6x9 postcard with unique mazes - flip on long edge)")
+
+            # Add to PDF pages (front, then back for each sheet)
+            postcard_pages.append(front_sheet)
+            postcard_pages.append(back_sheet)
+
+        # Save combined postcard PDF for easy double-sided printing
+        if postcard_pages:
+            pdf_filename = f"{config.name}_postcard_duplex.pdf"
+            pdf_path = os.path.join(output_dir, pdf_filename)
+            postcard_pages[0].save(
+                pdf_path,
+                "PDF",
+                resolution=300,
+                save_all=True,
+                append_images=postcard_pages[1:]
+            )
+            print(f"Saved: {pdf_filename} (6x9 postcard PDF - print double-sided, flip on long edge)")
 
 
 if __name__ == "__main__":
