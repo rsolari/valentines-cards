@@ -674,14 +674,14 @@ def generate_greek_card_back(
 def generate_printable_sheet(
     card_front: Image,
     config: Optional[CardConfig] = None,
-    page_width_in: float = 8.5,
-    page_height_in: float = 11,
+    page_width_in: float = 11,
+    page_height_in: float = 8.5,
     dpi: int = 300
 ) -> tuple:
     """Generate front and back sheets for double-sided printing.
 
     Returns (front_sheet, back_sheet) images.
-    Cards are 2.5" x 3.5", arranged on letter-size paper.
+    Cards are 2.5" x 3.5", arranged on letter-size paper (landscape).
     Back sheet is horizontally mirrored so cards align when printed double-sided.
     Each card on the back gets a unique maze.
     """
