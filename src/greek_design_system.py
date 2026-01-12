@@ -815,6 +815,7 @@ Examples:
     print(f"Saved: {back_filename}")
 
     # Generate printable sheets for double-sided printing (each back has unique mazes)
+    all_pages = []  # For combined PDF
     for sheet_num in range(1, args.sheets + 1):
         front_sheet, back_sheet = generate_printable_sheet(front, config=config)
         front_sheet_filename = f"{config.name}_print_fronts_{sheet_num}.png"
@@ -824,6 +825,24 @@ Examples:
         back_sheet_filename = f"{config.name}_print_backs_{sheet_num}.png"
         back_sheet.save(os.path.join(output_dir, back_sheet_filename), dpi=(300, 300))
         print(f"Saved: {back_sheet_filename} (8.5x11 sheet with unique mazes - flip on long edge)")
+
+        # Add to PDF pages (front, then back for each sheet)
+        all_pages.append(front_sheet)
+        all_pages.append(back_sheet)
+
+    # Save combined PDF for easy double-sided printing
+    if all_pages:
+        pdf_filename = f"{config.name}_print_duplex.pdf"
+        pdf_path = os.path.join(output_dir, pdf_filename)
+        # First page saved with save(), rest appended
+        all_pages[0].save(
+            pdf_path,
+            "PDF",
+            resolution=300,
+            save_all=True,
+            append_images=all_pages[1:]
+        )
+        print(f"Saved: {pdf_filename} (combined PDF - print double-sided, flip on long edge)")
 
 
 if __name__ == "__main__":
