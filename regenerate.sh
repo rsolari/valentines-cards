@@ -20,7 +20,7 @@ fi
 
 # Step 2: Generate new files
 echo "Step 2: Generating new cards..."
-python src/greek_design_system.py
+python3 src/greek_design_system.py
 
 # Step 3: Compare file sizes
 echo ""

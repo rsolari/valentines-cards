@@ -6,25 +6,38 @@ Inspired by ancient Greek black-figure and red-figure pottery,
 featuring classic motifs like the meander (Greek key) pattern.
 
 Card specs: 2.5" x 3.5" at 300 DPI = 750 x 1050 pixels (portrait)
+
+This module supports configuration-driven card generation.
+Use a YAML config file to customize colors, text, hero image, and maze style.
 """
 
 import os
 import random
+import argparse
 from PIL import Image, ImageDraw, ImageFont
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
+
+from config import CardConfig, load_config, get_default_config
+from wall_renderers import get_wall_renderer
 
 
 # =============================================================================
-# COLOR PALETTE
+# COLOR PALETTE (wraps config colors for backwards compatibility)
 # =============================================================================
 
-@dataclass
-class GreekPalette:
-    """Color palette inspired by ancient Greek pottery."""
-    terracotta: str = "#CD6839"
-    black: str = "#1A1A1A"
-    white: str = "#F5F0E6"
+class DynamicPalette:
+    """Color palette that can be updated from config."""
+
+    def __init__(self, config: Optional[CardConfig] = None):
+        if config:
+            self.terracotta = config.colors.primary
+            self.black = config.colors.secondary
+            self.white = config.colors.accent
+        else:
+            self.terracotta = "#CD6839"
+            self.black = "#1A1A1A"
+            self.white = "#F5F0E6"
 
     def as_rgb(self, color_name: str) -> Tuple[int, int, int]:
         """Convert hex color to RGB tuple."""
@@ -32,7 +45,14 @@ class GreekPalette:
         return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 
-PALETTE = GreekPalette()
+# Global palette (set from config or use default)
+PALETTE = DynamicPalette()
+
+
+def set_palette_from_config(config: CardConfig):
+    """Update the global palette from a config object."""
+    global PALETTE
+    PALETTE = DynamicPalette(config)
 
 
 # =============================================================================
@@ -261,103 +281,6 @@ def generate_maze(rows: int, cols: int) -> list:
     return grid
 
 
-def draw_mosaic_wall(
-    draw: ImageDraw,
-    x1: int, y1: int,
-    x2: int, y2: int,
-    tile_size: int = 6,
-    gap: int = 2,
-    base_color: str = None
-):
-    """Draw a wall segment as mosaic tiles."""
-    base = base_color or PALETTE.black
-
-    # Parse base color
-    if base.startswith('#'):
-        base_rgb = tuple(int(base.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-    else:
-        base_rgb = (26, 26, 26)  # Default black
-
-    # Determine if horizontal or vertical
-    if abs(x2 - x1) > abs(y2 - y1):
-        # Horizontal wall
-        start_x, end_x = min(x1, x2), max(x1, x2)
-        y = y1
-        x = start_x
-        while x < end_x:
-            # Vary color slightly for each tile
-            factor = random.uniform(0.7, 1.3)
-            tile_color = tuple(max(0, min(255, int(c * factor))) for c in base_rgb)
-
-            tile_end = min(x + tile_size, end_x)
-            half_tile = tile_size // 2
-            draw.rectangle([x, y - half_tile, tile_end, y + half_tile], fill=tile_color)
-            x += tile_size + gap
-    else:
-        # Vertical wall
-        start_y, end_y = min(y1, y2), max(y1, y2)
-        x = x1
-        y = start_y
-        while y < end_y:
-            # Vary color slightly for each tile
-            factor = random.uniform(0.7, 1.3)
-            tile_color = tuple(max(0, min(255, int(c * factor))) for c in base_rgb)
-
-            tile_end = min(y + tile_size, end_y)
-            half_tile = tile_size // 2
-            draw.rectangle([x - half_tile, y, x + half_tile, tile_end], fill=tile_color)
-            y += tile_size + gap
-
-
-def draw_maze(
-    draw: ImageDraw,
-    grid: list,
-    x_offset: int,
-    y_offset: int,
-    cell_size: int,
-    tile_size: int = 6,
-    gap: int = 2,
-    wall_color: str = None
-):
-    """Draw the maze on the image using mosaic tiles."""
-    rows = len(grid)
-    cols = len(grid[0])
-
-    for row in range(rows):
-        for col in range(cols):
-            cell = grid[row][col]
-            cx = x_offset + col * cell_size
-            cy = y_offset + row * cell_size
-
-            # Draw north wall
-            if cell['N']:
-                draw_mosaic_wall(draw, cx, cy, cx + cell_size, cy,
-                               tile_size=tile_size, gap=gap, base_color=wall_color)
-
-            # Draw west wall
-            if cell['W']:
-                draw_mosaic_wall(draw, cx, cy, cx, cy + cell_size,
-                               tile_size=tile_size, gap=gap, base_color=wall_color)
-
-    # Draw east border (right edge)
-    for row in range(rows):
-        cell = grid[row][cols - 1]
-        if cell['E']:
-            cx = x_offset + cols * cell_size
-            cy = y_offset + row * cell_size
-            draw_mosaic_wall(draw, cx, cy, cx, cy + cell_size,
-                           tile_size=tile_size, gap=gap, base_color=wall_color)
-
-    # Draw south border (bottom edge)
-    for col in range(cols):
-        cell = grid[rows - 1][col]
-        if cell['S']:
-            cx = x_offset + col * cell_size
-            cy = y_offset + rows * cell_size
-            draw_mosaic_wall(draw, cx, cy, cx + cell_size, cy,
-                           tile_size=tile_size, gap=gap, base_color=wall_color)
-
-
 # =============================================================================
 # SHARED BORDER DRAWING
 # =============================================================================
@@ -402,13 +325,19 @@ def draw_card_borders(
 # =============================================================================
 
 def generate_greek_card_front(
-    width: int = 750,
-    height: int = 1050,
-    border_width: int = 40,
-    add_texture: bool = True,
+    config: Optional[CardConfig] = None,
+    width: int = None,
+    height: int = None,
+    border_width: int = None,
+    add_texture: bool = None,
     minotaur_path: str = None
 ) -> Image:
     """Generate card front with Greek pottery styling.
+
+    Args:
+        config: CardConfig object with all settings (preferred)
+        width, height, border_width, add_texture, minotaur_path: Legacy parameters
+            (used if config is None for backwards compatibility)
 
     Layout spec (tightened for high-impact):
     - Inner margins: 54px top/bottom, 48-54px left/right
@@ -419,6 +348,20 @@ def generate_greek_card_front(
     - Pun baseline to bottom inner border: 84px
     - Credit: 6-7pt at 80-85% opacity, 48-54px from inner border
     """
+    # Use config values or fall back to legacy parameters/defaults
+    if config:
+        width = config.width
+        height = config.height
+        border_width = config.border_width
+        add_texture = config.add_texture
+        hero_nudge_x = config.hero_nudge_x
+    else:
+        width = width or 750
+        height = height or 1050
+        border_width = border_width or 40
+        add_texture = add_texture if add_texture is not None else True
+        hero_nudge_x = -12
+
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
@@ -432,7 +375,7 @@ def generate_greek_card_front(
     ILLUSTRATION_TO_PUN_GAP = 72
     PUN_BOTTOM_PADDING = 84
     CENTER_X = width // 2  # 375
-    OPTICAL_NUDGE_X = -12  # Nudge left if art mass leans right
+    OPTICAL_NUDGE_X = hero_nudge_x  # Nudge left if art mass leans right
     CREDIT_OFFSET_RIGHT = 48
     CREDIT_OFFSET_BOTTOM = 48
 
@@ -442,13 +385,32 @@ def generate_greek_card_front(
     base_dir = os.path.dirname(os.path.abspath(__file__))
     greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
 
-    # Calculate header position (reduced 10% from 80pt for balance with larger art)
+    # Get text settings from config or use defaults
+    if config:
+        header_text = config.front_text.header
+        header_font_size = config.front_text.header_font_size
+        part1 = config.front_text.pun_prefix
+        part2 = config.front_text.pun_emphasis
+        part3 = config.front_text.pun_suffix
+        pun_font_size = config.front_text.pun_font_size
+        pun_emphasis_font_size = config.front_text.pun_emphasis_font_size
+        credit_text = config.front_text.credit
+        credit_font_size = config.front_text.credit_font_size
+    else:
+        header_text = "Happy Valentine's"
+        header_font_size = 72
+        part1, part2, part3 = "You are a", "MAZE", "ing!"
+        pun_font_size = 42
+        pun_emphasis_font_size = 90
+        credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
+        credit_font_size = 10
+
+    # Calculate header position
     try:
-        header_font = ImageFont.truetype(greek_font_path, 72)
+        header_font = ImageFont.truetype(greek_font_path, header_font_size)
     except:
         header_font = ImageFont.load_default()
 
-    header_text = "Happy Valentine's"
     header_bbox = draw.textbbox((0, 0), header_text, font=header_font)
     header_width = header_bbox[2] - header_bbox[0]
     header_height = header_bbox[3] - header_bbox[1]
@@ -457,12 +419,11 @@ def generate_greek_card_front(
 
     # Calculate pun line position (from bottom)
     try:
-        small_font = ImageFont.truetype(greek_font_path, 42)
-        big_font = ImageFont.truetype(greek_font_path, 90)
+        small_font = ImageFont.truetype(greek_font_path, pun_font_size)
+        big_font = ImageFont.truetype(greek_font_path, pun_emphasis_font_size)
     except:
         small_font = big_font = ImageFont.load_default()
 
-    part1, part2, part3 = "You are a", "MAZE", "ing!"
     bbox1 = draw.textbbox((0, 0), part1, font=small_font)
     bbox2 = draw.textbbox((0, 0), part2, font=big_font)
     bbox3 = draw.textbbox((0, 0), part3, font=small_font)
@@ -480,33 +441,38 @@ def generate_greek_card_front(
     illustration_zone_height = illustration_bottom - illustration_top
     illustration_zone_width = width - INNER_MARGIN_LEFT - INNER_MARGIN_RIGHT
 
-    # Add minotaur artwork
-    if minotaur_path:
-        try:
-            minotaur = Image.open(minotaur_path).convert('RGBA')
+    # Get hero image path
+    hero_path = minotaur_path
+    if config and config.hero_image and not hero_path:
+        hero_path = os.path.join(base_dir, "..", "assets", "artwork", config.hero_image)
 
-            minotaur_ratio = minotaur.width / minotaur.height
+    # Add hero artwork
+    if hero_path:
+        try:
+            hero = Image.open(hero_path).convert('RGBA')
+
+            hero_ratio = hero.width / hero.height
             zone_ratio = illustration_zone_width / illustration_zone_height
 
-            if minotaur_ratio > zone_ratio:
+            if hero_ratio > zone_ratio:
                 new_width = illustration_zone_width
-                new_height = int(illustration_zone_width / minotaur_ratio)
+                new_height = int(illustration_zone_width / hero_ratio)
             else:
                 new_height = illustration_zone_height
-                new_width = int(illustration_zone_height * minotaur_ratio)
+                new_width = int(illustration_zone_height * hero_ratio)
 
-            minotaur = minotaur.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            hero = hero.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
             # Center in illustration zone with optical nudge
             x_pos = CENTER_X - new_width // 2 + OPTICAL_NUDGE_X
             y_pos = illustration_top + (illustration_zone_height - new_height) // 2
 
             img = img.convert('RGBA')
-            img.paste(minotaur, (x_pos, y_pos), minotaur)
+            img.paste(hero, (x_pos, y_pos), hero)
             img = img.convert('RGB')
 
         except Exception as e:
-            print(f"Could not load minotaur image: {e}")
+            print(f"Could not load hero image: {e}")
 
     draw = ImageDraw.Draw(img)
 
@@ -523,11 +489,10 @@ def generate_greek_card_front(
     # Artist credit (6-7pt ≈ 8-10px at 300dpi, with 80-85% opacity)
     # Pinned to bottom, just above the Greek key border
     try:
-        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", credit_font_size)
     except:
         credit_font = ImageFont.load_default()
 
-    credit_text = "art by Andrew Morris vanmorrisman@yahoo.co.uk"
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
     credit_width = credit_bbox[2] - credit_bbox[0]
     credit_height = credit_bbox[3] - credit_bbox[1]
@@ -545,12 +510,31 @@ def generate_greek_card_front(
 
 
 def generate_greek_card_back(
-    width: int = 750,
-    height: int = 1050,
-    border_width: int = 40,
-    add_texture: bool = True
+    config: Optional[CardConfig] = None,
+    width: int = None,
+    height: int = None,
+    border_width: int = None,
+    add_texture: bool = None
 ) -> Image:
-    """Generate card back with maze and text."""
+    """Generate card back with maze and text.
+
+    Args:
+        config: CardConfig object with all settings (preferred)
+        width, height, border_width, add_texture: Legacy parameters
+            (used if config is None for backwards compatibility)
+    """
+    # Use config values or fall back to legacy parameters/defaults
+    if config:
+        width = config.width
+        height = config.height
+        border_width = config.border_width
+        add_texture = config.add_texture
+    else:
+        width = width or 750
+        height = height or 1050
+        border_width = border_width or 40
+        add_texture = add_texture if add_texture is not None else True
+
     img = Image.new('RGB', (width, height), PALETTE.terracotta)
     draw = ImageDraw.Draw(img)
 
@@ -564,8 +548,30 @@ def generate_greek_card_back(
     maze_width = width - 2 * maze_margin
     maze_height = height - 2 * maze_margin - text_area_height
 
-    # Maze parameters
-    cell_size = 40  # Size of each maze cell
+    # Maze parameters from config or defaults
+    if config:
+        cell_size = config.maze.cell_size
+        wall_type = config.maze.wall_type
+        wall_color = config.maze.wall_color or config.colors.secondary
+        tile_size = config.maze.tile_size
+        tile_gap = config.maze.tile_gap
+        wall_thickness = config.maze.wall_thickness
+        scale_size = config.maze.scale_size
+        scale_variation = config.maze.scale_variation
+        dot_size = config.maze.dot_size
+        dot_gap = config.maze.dot_gap
+    else:
+        cell_size = 40
+        wall_type = "mosaic"
+        wall_color = PALETTE.black
+        tile_size = 6
+        tile_gap = 2
+        wall_thickness = 4
+        scale_size = 8
+        scale_variation = 0.2
+        dot_size = 4
+        dot_gap = 4
+
     maze_cols = maze_width // cell_size
     maze_rows = maze_height // cell_size
 
@@ -575,9 +581,40 @@ def generate_greek_card_back(
     maze_x = (width - actual_maze_width) // 2
     maze_y = maze_margin + (maze_height - actual_maze_height) // 2
 
-    # Generate and draw maze
+    # Generate maze grid
     grid = generate_maze(maze_rows, maze_cols)
-    draw_maze(draw, grid, maze_x, maze_y, cell_size, tile_size=6, gap=2)
+
+    # Get the appropriate wall renderer
+    renderer = get_wall_renderer(
+        wall_type,
+        base_color=wall_color,
+        tile_size=tile_size,
+        tile_gap=tile_gap,
+        wall_thickness=wall_thickness,
+        scale_size=scale_size,
+        scale_variation=scale_variation,
+        dot_size=dot_size,
+        gap=dot_gap
+    )
+
+    # Draw maze using the renderer
+    renderer.draw_maze(draw, grid, maze_x, maze_y, cell_size)
+
+    # Get text settings from config or use defaults
+    if config:
+        start_label = config.back_text.start_label
+        end_label = config.back_text.end_label
+        from_text = config.back_text.message
+        from_font_size = config.back_text.message_font_size
+        credit_text = config.back_text.credit
+        credit_font_size = config.back_text.credit_font_size
+    else:
+        start_label = "start"
+        end_label = "end"
+        from_text = "From Felix"
+        from_font_size = 48
+        credit_text = "designed by Felix and his mom, Meghan"
+        credit_font_size = 10
 
     # Add "start" and "end" labels
     try:
@@ -586,52 +623,43 @@ def generate_greek_card_back(
         label_font = ImageFont.load_default()
 
     # The maze entrance/exit is at column (maze_cols // 2)
-    # The visual gap differs from cell boundaries due to mosaic tile drawing:
-    # - Tiles are 6px wide with 2px gaps between them
-    # - Last tile of prev column ends at (cell_boundary - 2), gap starts at (cell_boundary - 1)
-    # - First tile of next column starts exactly at cell_boundary
-    # So visual gap is from (entrance_col * cell_size - 1) to ((entrance_col + 1) * cell_size - 1)
     entrance_col = maze_cols // 2
     gap_visual_left = maze_x + entrance_col * cell_size - 1
     gap_visual_right = maze_x + (entrance_col + 1) * cell_size - 1
     gap_center_x = (gap_visual_left + gap_visual_right) // 2
 
-    # "start" label above entrance - use textlength with +1 adjustment for font rendering
-    start_text = "start"
-    start_length = draw.textlength(start_text, font=label_font)
-    start_x = gap_center_x - start_length / 2 + 1  # +1 compensates for font rendering offset
-    draw.text((start_x, maze_y - 20), start_text, fill=PALETTE.black, font=label_font)
+    # "start" label above entrance
+    start_length = draw.textlength(start_label, font=label_font)
+    start_x = gap_center_x - start_length / 2 + 1
+    draw.text((start_x, maze_y - 20), start_label, fill=PALETTE.black, font=label_font)
 
-    # "end" label below exit - use textlength with +1 adjustment for font rendering
-    end_text = "end"
-    end_length = draw.textlength(end_text, font=label_font)
-    end_x = gap_center_x - end_length / 2 + 1  # +1 compensates for font rendering offset
+    # "end" label below exit
+    end_length = draw.textlength(end_label, font=label_font)
+    end_x = gap_center_x - end_length / 2 + 1
     exit_y = maze_y + maze_rows * cell_size + 6
-    draw.text((end_x, exit_y), end_text, fill=PALETTE.black, font=label_font)
+    draw.text((end_x, exit_y), end_label, fill=PALETTE.black, font=label_font)
 
     # Setup fonts
     base_dir = os.path.dirname(os.path.abspath(__file__))
     greek_font_path = os.path.join(base_dir, "..", "assets", "fonts", "Greek-Freak.ttf")
 
-    # "From Felix" text
+    # "From X" text
     try:
-        from_font = ImageFont.truetype(greek_font_path, 48)
+        from_font = ImageFont.truetype(greek_font_path, from_font_size)
     except:
         from_font = ImageFont.load_default()
 
-    from_text = "From Felix"
     from_bbox = draw.textbbox((0, 0), from_text, font=from_font)
     from_x = (width - (from_bbox[2] - from_bbox[0])) // 2
     from_y = height - text_area_height - 20
     draw.text((from_x, from_y), from_text, fill=PALETTE.black, font=from_font)
 
-    # "designed by Felix and his mom" credit
+    # Credit text
     try:
-        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
+        credit_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", credit_font_size)
     except:
         credit_font = ImageFont.load_default()
 
-    credit_text = "designed by Felix and his mom, Meghan"
     credit_bbox = draw.textbbox((0, 0), credit_text, font=credit_font)
     credit_x = (width - (credit_bbox[2] - credit_bbox[0])) // 2
     credit_y = height - 70
@@ -645,6 +673,7 @@ def generate_greek_card_back(
 
 def generate_printable_sheet(
     card_front: Image,
+    config: Optional[CardConfig] = None,
     page_width_in: float = 8.5,
     page_height_in: float = 11,
     dpi: int = 300
@@ -687,7 +716,7 @@ def generate_printable_sheet(
     for row in range(rows):
         for col in range(cols):
             # Generate a fresh back card with unique maze
-            card_back = generate_greek_card_back()
+            card_back = generate_greek_card_back(config=config)
             # Mirror horizontally: rightmost card on front = leftmost on back
             mirrored_col = cols - 1 - col
             x = start_x + mirrored_col * (card_width + margin)
@@ -698,36 +727,122 @@ def generate_printable_sheet(
 
 
 def main():
+    """Main entry point - supports both config file and legacy operation."""
+    parser = argparse.ArgumentParser(
+        description="Generate Greek pottery-styled cards",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python greek_design_system.py                    # Use default valentine config
+  python greek_design_system.py -c configs/snake.yaml  # Use custom config
+  python greek_design_system.py --list-wall-types  # Show available wall types
+        """
+    )
+    parser.add_argument(
+        '-c', '--config',
+        help='Path to YAML configuration file'
+    )
+    parser.add_argument(
+        '-o', '--output',
+        help='Output directory (default: assets/templates)'
+    )
+    parser.add_argument(
+        '--list-wall-types',
+        action='store_true',
+        help='List available wall renderer types'
+    )
+    parser.add_argument(
+        '--sheets',
+        type=int,
+        default=3,
+        help='Number of printable sheets to generate (default: 3)'
+    )
+
+    args = parser.parse_args()
+
+    # Handle --list-wall-types
+    if args.list_wall_types:
+        from wall_renderers import WALL_RENDERERS
+        print("Available wall types:")
+        for name in WALL_RENDERERS.keys():
+            print(f"  - {name}")
+        return
+
     base_dir = os.path.join(os.path.dirname(__file__), "..")
-    output_dir = os.path.join(base_dir, "assets", "templates")
+
+    # Load configuration
+    if args.config:
+        config = load_config(args.config)
+        print(f"Loaded configuration: {config.name}")
+    else:
+        config = get_default_config()
+        # Set default hero image
+        config.hero_image = "minotaur.png"
+        print("Using default Valentine's configuration")
+
+    # Set up palette from config
+    set_palette_from_config(config)
+
+    # Determine output directory
+    output_dir = args.output or os.path.join(base_dir, "assets", "templates")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Check for minotaur image
-    minotaur_path = os.path.join(base_dir, "assets", "artwork", "minotaur.png")
-    if not os.path.exists(minotaur_path):
-        minotaur_path = None
+    # Check for hero image
+    if config.hero_image:
+        hero_path = os.path.join(base_dir, "assets", "artwork", config.hero_image)
+        if not os.path.exists(hero_path):
+            print(f"Warning: Hero image not found: {hero_path}")
+            hero_path = None
+    else:
+        hero_path = None
 
     print("Greek Pottery Design System")
     print("=" * 40)
-    print("Card size: 2.5\" x 3.5\" portrait (750 x 1050 pixels at 300 DPI)")
+    print(f"Card: {config.name} - {config.description}")
+    print(f"Size: {config.width}x{config.height} pixels ({config.width/300:.1f}\" x {config.height/300:.1f}\" at 300 DPI)")
+    print(f"Wall type: {config.maze.wall_type}")
+    print(f"Colors: primary={config.colors.primary}, secondary={config.colors.secondary}")
 
     # Generate cards
-    front = generate_greek_card_front(minotaur_path=minotaur_path)
-    front.save(os.path.join(output_dir, "greek_card_front.png"), dpi=(300, 300))
-    print("Saved: greek_card_front.png")
+    front = generate_greek_card_front(config=config, minotaur_path=hero_path)
+    front_filename = f"{config.name}_card_front.png"
+    front.save(os.path.join(output_dir, front_filename), dpi=(300, 300))
+    print(f"Saved: {front_filename}")
 
-    back = generate_greek_card_back()
-    back.save(os.path.join(output_dir, "greek_card_back.png"), dpi=(300, 300))
-    print("Saved: greek_card_back.png")
+    back = generate_greek_card_back(config=config)
+    back_filename = f"{config.name}_card_back.png"
+    back.save(os.path.join(output_dir, back_filename), dpi=(300, 300))
+    print(f"Saved: {back_filename}")
 
-    # Generate 3 printable sheets for double-sided printing (each back has unique mazes)
-    for sheet_num in range(1, 4):
-        front_sheet, back_sheet = generate_printable_sheet(front)
-        front_sheet.save(os.path.join(output_dir, f"print_fronts_{sheet_num}.png"), dpi=(300, 300))
-        print(f"Saved: print_fronts_{sheet_num}.png (8.5x11 sheet with card fronts)")
+    # Generate printable sheets for double-sided printing (each back has unique mazes)
+    all_pages = []  # For combined PDF
+    for sheet_num in range(1, args.sheets + 1):
+        front_sheet, back_sheet = generate_printable_sheet(front, config=config)
+        front_sheet_filename = f"{config.name}_print_fronts_{sheet_num}.png"
+        front_sheet.save(os.path.join(output_dir, front_sheet_filename), dpi=(300, 300))
+        print(f"Saved: {front_sheet_filename} (8.5x11 sheet with card fronts)")
 
-        back_sheet.save(os.path.join(output_dir, f"print_backs_{sheet_num}.png"), dpi=(300, 300))
-        print(f"Saved: print_backs_{sheet_num}.png (8.5x11 sheet with unique mazes - flip on long edge)")
+        back_sheet_filename = f"{config.name}_print_backs_{sheet_num}.png"
+        back_sheet.save(os.path.join(output_dir, back_sheet_filename), dpi=(300, 300))
+        print(f"Saved: {back_sheet_filename} (8.5x11 sheet with unique mazes - flip on long edge)")
+
+        # Add to PDF pages (front, then back for each sheet)
+        all_pages.append(front_sheet)
+        all_pages.append(back_sheet)
+
+    # Save combined PDF for easy double-sided printing
+    if all_pages:
+        pdf_filename = f"{config.name}_print_duplex.pdf"
+        pdf_path = os.path.join(output_dir, pdf_filename)
+        # First page saved with save(), rest appended
+        all_pages[0].save(
+            pdf_path,
+            "PDF",
+            resolution=300,
+            save_all=True,
+            append_images=all_pages[1:]
+        )
+        print(f"Saved: {pdf_filename} (combined PDF - print double-sided, flip on long edge)")
 
 
 if __name__ == "__main__":
