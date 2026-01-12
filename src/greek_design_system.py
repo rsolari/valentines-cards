@@ -596,18 +596,16 @@ def generate_greek_card_back(
     gap_visual_right = maze_x + (entrance_col + 1) * cell_size - 1
     gap_center_x = (gap_visual_left + gap_visual_right) // 2
 
-    # "start" label above entrance - manually center using textbbox
+    # "start" label above entrance - use textlength with +1 adjustment for font rendering
     start_text = "start"
-    start_bbox = draw.textbbox((0, 0), start_text, font=label_font)
-    start_text_width = start_bbox[2] - start_bbox[0]
-    start_x = gap_center_x - start_text_width // 2
+    start_length = draw.textlength(start_text, font=label_font)
+    start_x = gap_center_x - start_length / 2 + 1  # +1 compensates for font rendering offset
     draw.text((start_x, maze_y - 20), start_text, fill=PALETTE.black, font=label_font)
 
-    # "end" label below exit - manually center using textbbox
+    # "end" label below exit - use textlength with +1 adjustment for font rendering
     end_text = "end"
-    end_bbox = draw.textbbox((0, 0), end_text, font=label_font)
-    end_text_width = end_bbox[2] - end_bbox[0]
-    end_x = gap_center_x - end_text_width // 2
+    end_length = draw.textlength(end_text, font=label_font)
+    end_x = gap_center_x - end_length / 2 + 1  # +1 compensates for font rendering offset
     exit_y = maze_y + maze_rows * cell_size + 6
     draw.text((end_x, exit_y), end_text, fill=PALETTE.black, font=label_font)
 
