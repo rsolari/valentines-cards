@@ -1,0 +1,59 @@
+# Valentine's Day Card Configuration
+# This is the default configuration for the Greek pottery-styled Valentine's card
+
+name: valentine
+description: Valentine's Day card with Greek pottery styling
+
+# Hero image (relative to assets/artwork/)
+hero_image: minotaur.png
+hero_nudge_x: -12  # Optical adjustment - nudge left if artwork leans right
+
+# Card dimensions (at 300 DPI)
+width: 750   # 2.5 inches
+height: 1050  # 3.5 inches
+
+# Visual options
+add_texture: true
+border_width: 40
+
+# Color palette - Greek pottery inspired
+colors:
+  primary: "#CD6839"    # Terracotta - main background
+  secondary: "#1A1A1A"  # Black - text and outlines
+  accent: "#F5F0E6"     # Off-white
+
+# Front card text
+front_text:
+  header: "Happy Valentine's"
+  header_font_size: 72
+  # Pun line with emphasis (prefix + EMPHASIS + suffix)
+  pun_prefix: "You are a"
+  pun_emphasis: "MAZE"
+  pun_suffix: "ing!"
+  pun_font_size: 42
+  pun_emphasis_font_size: 90
+  # Artist credit
+  credit: "art by Andrew Morris vanmorrisman@yahoo.co.uk"
+  credit_font_size: 10
+
+# Back card text
+back_text:
+  message: "From Felix"
+  message_font_size: 48
+  credit: "designed by Felix and his mom, Meghan"
+  credit_font_size: 10
+  start_label: "start"
+  end_label: "end"
+
+# Maze configuration
+maze:
+  cell_size: 40
+  # Wall renderer type: 'mosaic', 'solid', 'snake', 'dotted'
+  wall_type: mosaic
+  # Mosaic-specific settings
+  tile_size: 6
+  tile_gap: 2
+  # Solid wall settings (used if wall_type is 'solid')
+  wall_thickness: 4
+  # Wall color (null = use secondary color)
+  wall_color: null

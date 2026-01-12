@@ -1,0 +1,58 @@
+# Snake-Themed Card Configuration
+# Example showing how to create a snake/serpent themed variation
+#
+# To use: python src/greek_design_system.py -c configs/snake-example.yaml
+
+name: snake
+description: Snake-themed card with serpent scale maze walls
+
+# Hero image - replace with snake artwork when available
+hero_image: null  # TODO: Add snake.png to assets/artwork/
+hero_nudge_x: 0
+
+# Card dimensions (at 300 DPI)
+width: 750
+height: 1050
+
+# Visual options
+add_texture: true
+border_width: 40
+
+# Color palette - Forest/jungle inspired for snakes
+colors:
+  primary: "#2D5A27"    # Forest green - main background
+  secondary: "#1A1A1A"  # Black - text and outlines
+  accent: "#90EE90"     # Light green
+
+# Front card text - snake pun!
+front_text:
+  header: "Happy Valentine's"
+  header_font_size: 72
+  pun_prefix: "I'm "
+  pun_emphasis: "SSSO"
+  pun_suffix: " glad you're mine!"
+  pun_font_size: 42
+  pun_emphasis_font_size: 90
+  credit: ""
+  credit_font_size: 10
+
+# Back card text
+back_text:
+  message: "From Your Valentine"
+  message_font_size: 42
+  credit: ""
+  credit_font_size: 10
+  start_label: "start"
+  end_label: "end"
+
+# Maze configuration - using snake scale walls!
+maze:
+  cell_size: 40
+  wall_type: snake       # Snake scale pattern for walls
+  scale_size: 8          # Size of each scale
+  scale_variation: 0.2   # Color variation between scales
+  wall_color: "#2E8B57"  # Sea green for snake scales
+  # Fallback settings if needed
+  tile_size: 6
+  tile_gap: 2
+  wall_thickness: 4
