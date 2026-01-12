@@ -204,26 +204,49 @@ class SnakeWallRenderer(WallRenderer):
         self.scale_size = scale_size
         self.scale_variation = scale_variation
 
-    def _draw_scale(self, draw: ImageDraw, cx: int, cy: int, horizontal: bool):
-        """Draw a single snake scale."""
-        # Vary color for each scale
+    def _draw_scale(self, draw: ImageDraw, cx: int, cy: int, horizontal: bool, row_offset: int = 0):
+        """Draw a single snake scale with realistic overlapping pattern."""
+        # Vary color for each scale - lighter in center, darker at edges
         variation = 1.0 + random.uniform(-self.scale_variation, self.scale_variation)
         scale_color = tuple(max(0, min(255, int(c * variation))) for c in self.base_rgb)
 
+        # Darker outline color
+        outline_color = tuple(max(0, int(c * 0.6)) for c in self.base_rgb)
+
+        # Highlight color for 3D effect
+        highlight = tuple(min(255, int(c * 1.3)) for c in scale_color)
+
         half = self.scale_size // 2
+        quarter = self.scale_size // 4
+
         if horizontal:
-            # Draw overlapping semicircle pattern for horizontal walls
+            # Draw U-shaped scale pointing down (like fish/snake scales)
+            # Main scale body
             draw.ellipse(
-                [cx - half, cy - half, cx + half, cy + half],
+                [cx - half, cy - half, cx + half, cy + half + quarter],
                 fill=scale_color,
-                outline=tuple(max(0, int(c * 0.7)) for c in self.base_rgb)
+                outline=outline_color
+            )
+            # Highlight arc at top
+            draw.arc(
+                [cx - half + 2, cy - half + 2, cx + half - 2, cy + quarter],
+                start=200, end=340,
+                fill=highlight,
+                width=1
             )
         else:
-            # Draw overlapping semicircle pattern for vertical walls
+            # Draw scale pointing sideways for vertical walls
             draw.ellipse(
-                [cx - half, cy - half, cx + half, cy + half],
+                [cx - half - quarter, cy - half, cx + half, cy + half],
                 fill=scale_color,
-                outline=tuple(max(0, int(c * 0.7)) for c in self.base_rgb)
+                outline=outline_color
+            )
+            # Highlight arc
+            draw.arc(
+                [cx - half - quarter + 2, cy - half + 2, cx + half - 2, cy + half - 2],
+                start=110, end=250,
+                fill=highlight,
+                width=1
             )
 
     def draw_wall(
@@ -232,24 +255,148 @@ class SnakeWallRenderer(WallRenderer):
         x1: int, y1: int,
         x2: int, y2: int
     ):
-        """Draw a wall segment as snake scales."""
+        """Draw a wall segment as overlapping snake scales."""
         # Determine if horizontal or vertical
         if abs(x2 - x1) > abs(y2 - y1):
-            # Horizontal wall
+            # Horizontal wall - draw two rows of overlapping scales
             start_x, end_x = min(x1, x2), max(x1, x2)
             y = y1
+
+            # First row
             x = start_x + self.scale_size // 2
             while x < end_x:
-                self._draw_scale(draw, x, y, horizontal=True)
-                x += self.scale_size - 2  # Overlap scales slightly
+                self._draw_scale(draw, x, y - 2, horizontal=True, row_offset=0)
+                x += self.scale_size - 1
+
+            # Second row (offset for overlap effect)
+            x = start_x + self.scale_size
+            while x < end_x:
+                self._draw_scale(draw, x, y + 2, horizontal=True, row_offset=1)
+                x += self.scale_size - 1
         else:
-            # Vertical wall
+            # Vertical wall - draw two columns of overlapping scales
             start_y, end_y = min(y1, y2), max(y1, y2)
             x = x1
+
+            # First column
             y = start_y + self.scale_size // 2
             while y < end_y:
-                self._draw_scale(draw, x, y, horizontal=False)
-                y += self.scale_size - 2  # Overlap scales slightly
+                self._draw_scale(draw, x - 2, y, horizontal=False, row_offset=0)
+                y += self.scale_size - 1
+
+            # Second column (offset)
+            y = start_y + self.scale_size
+            while y < end_y:
+                self._draw_scale(draw, x + 2, y, horizontal=False, row_offset=1)
+                y += self.scale_size - 1
+
+    @staticmethod
+    def draw_snake_head(draw: ImageDraw, cx: int, cy: int, size: int, color: str, direction: str = "down"):
+        """Draw a snake head at the maze entrance.
+
+        Args:
+            draw: PIL ImageDraw object
+            cx, cy: Center position
+            size: Size of the head
+            color: Hex color for the snake
+            direction: 'up', 'down', 'left', 'right'
+        """
+        # Parse color
+        hex_color = color.lstrip('#')
+        base_rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        dark_rgb = tuple(max(0, int(c * 0.6)) for c in base_rgb)
+        light_rgb = tuple(min(255, int(c * 1.2)) for c in base_rgb)
+
+        half = size // 2
+        quarter = size // 4
+
+        if direction == "down":
+            # Head shape - elongated oval pointing down
+            draw.ellipse([cx - half, cy - quarter, cx + half, cy + half + quarter],
+                        fill=base_rgb, outline=dark_rgb)
+            # Eyes
+            eye_y = cy
+            draw.ellipse([cx - quarter - 2, eye_y - 3, cx - quarter + 4, eye_y + 3],
+                        fill=(255, 215, 0), outline=dark_rgb)  # Gold eyes
+            draw.ellipse([cx + quarter - 4, eye_y - 3, cx + quarter + 2, eye_y + 3],
+                        fill=(255, 215, 0), outline=dark_rgb)
+            # Pupils (slits)
+            draw.line([(cx - quarter + 1, eye_y - 2), (cx - quarter + 1, eye_y + 2)],
+                     fill=(0, 0, 0), width=2)
+            draw.line([(cx + quarter - 1, eye_y - 2), (cx + quarter - 1, eye_y + 2)],
+                     fill=(0, 0, 0), width=2)
+            # Forked tongue
+            tongue_y = cy + half + quarter
+            draw.line([(cx, tongue_y), (cx, tongue_y + size // 3)], fill=(200, 50, 50), width=2)
+            draw.line([(cx, tongue_y + size // 3), (cx - 4, tongue_y + size // 2)], fill=(200, 50, 50), width=2)
+            draw.line([(cx, tongue_y + size // 3), (cx + 4, tongue_y + size // 2)], fill=(200, 50, 50), width=2)
+
+        elif direction == "up":
+            # Head pointing up
+            draw.ellipse([cx - half, cy - half - quarter, cx + half, cy + quarter],
+                        fill=base_rgb, outline=dark_rgb)
+            eye_y = cy - quarter
+            draw.ellipse([cx - quarter - 2, eye_y - 3, cx - quarter + 4, eye_y + 3],
+                        fill=(255, 215, 0), outline=dark_rgb)
+            draw.ellipse([cx + quarter - 4, eye_y - 3, cx + quarter + 2, eye_y + 3],
+                        fill=(255, 215, 0), outline=dark_rgb)
+            draw.line([(cx - quarter + 1, eye_y - 2), (cx - quarter + 1, eye_y + 2)],
+                     fill=(0, 0, 0), width=2)
+            draw.line([(cx + quarter - 1, eye_y - 2), (cx + quarter - 1, eye_y + 2)],
+                     fill=(0, 0, 0), width=2)
+            tongue_y = cy - half - quarter
+            draw.line([(cx, tongue_y), (cx, tongue_y - size // 3)], fill=(200, 50, 50), width=2)
+            draw.line([(cx, tongue_y - size // 3), (cx - 4, tongue_y - size // 2)], fill=(200, 50, 50), width=2)
+            draw.line([(cx, tongue_y - size // 3), (cx + 4, tongue_y - size // 2)], fill=(200, 50, 50), width=2)
+
+    @staticmethod
+    def draw_snake_tail(draw: ImageDraw, cx: int, cy: int, size: int, color: str, direction: str = "up"):
+        """Draw a snake tail at the maze exit.
+
+        Args:
+            draw: PIL ImageDraw object
+            cx, cy: Center position
+            size: Size of the tail
+            color: Hex color for the snake
+            direction: 'up', 'down', 'left', 'right'
+        """
+        # Parse color
+        hex_color = color.lstrip('#')
+        base_rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        dark_rgb = tuple(max(0, int(c * 0.6)) for c in base_rgb)
+
+        half = size // 2
+
+        if direction == "up":
+            # Tail tapering upward
+            points = [
+                (cx - half, cy + half),      # Bottom left
+                (cx + half, cy + half),      # Bottom right
+                (cx + 3, cy - half),         # Top right (tapered)
+                (cx - 3, cy - half),         # Top left (tapered)
+            ]
+            draw.polygon(points, fill=base_rgb, outline=dark_rgb)
+            # Rattle segments
+            for i in range(3):
+                seg_y = cy - half - (i * 6) - 4
+                seg_width = 4 - i
+                draw.ellipse([cx - seg_width, seg_y - 3, cx + seg_width, seg_y + 3],
+                           fill=base_rgb, outline=dark_rgb)
+
+        elif direction == "down":
+            # Tail tapering downward
+            points = [
+                (cx - half, cy - half),
+                (cx + half, cy - half),
+                (cx + 3, cy + half),
+                (cx - 3, cy + half),
+            ]
+            draw.polygon(points, fill=base_rgb, outline=dark_rgb)
+            for i in range(3):
+                seg_y = cy + half + (i * 6) + 4
+                seg_width = 4 - i
+                draw.ellipse([cx - seg_width, seg_y - 3, cx + seg_width, seg_y + 3],
+                           fill=base_rgb, outline=dark_rgb)
 
 
 class DottedWallRenderer(WallRenderer):
