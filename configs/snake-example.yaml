@@ -7,7 +7,7 @@ name: snake
 description: Snake-themed card with serpent scale maze walls
 
 # Hero image - replace with snake artwork when available
-hero_image: null  # TODO: Add snake.png to assets/artwork/
+hero_image: medusa.png  # TODO: Add snake.png to assets/artwork/
 hero_nudge_x: 0
 
 # Card dimensions (at 300 DPI)
