@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Psychedelic Medicine Pipeline</title>
+  <style>
+    :root {
+      --bg:       #0e1b0e;
+      --surface:  #162616;
+      --surface2: #1d321d;
+      --text:     #90ee90;
+      --muted:    #558055;
+      --border:   #2c472c;
+      --accent:   #b8ffb8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: system-ui, sans-serif;
+      color: var(--text);
+      padding: 48px 24px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 40px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── outer frame ── */
+    .table-frame {
+      position: relative;
+      max-width: 1100px;
+      margin: 0 auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 24px rgba(144, 238, 144, 0.07);
+    }
+
+    .table-inner {
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    /* ── header ── */
+    thead tr {
+      background: rgba(144, 238, 144, 0.06);
+    }
+
+    th {
+      padding: 18px 16px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th:first-child { padding-left: 28px; }
+    th:last-child  { padding-right: 28px; }
+
+    /* ── rows ── */
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:hover {
+      background: var(--surface2);
+    }
+
+    td {
+      padding: 18px 16px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      vertical-align: top;
+      color: var(--text);
+    }
+
+    td:first-child { padding-left: 28px; }
+    td:last-child  { padding-right: 28px; }
+
+    /* company name */
+    .company {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.88rem;
+    }
+
+    .ticker {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* stage badge */
+    .stage {
+      display: inline-block;
+      padding: 3px 11px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: rgba(144, 238, 144, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(144, 238, 144, 0.22);
+      white-space: nowrap;
+    }
+
+    .product {
+      font-weight: 600;
+      color: #c8e8c8;
+      margin-bottom: 2px;
+    }
+
+    td.muted-cell {
+      color: var(--muted);
+    }
+
+    /* caption */
+    .caption {
+      max-width: 1100px;
+      margin: 16px auto 0;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .caption a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .caption a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Psychedelic Medicine Pipeline</h1>
+  <p class="subtitle">Public companies — clinical-stage programs as of 2026</p>
+
+  <div class="table-frame">
+    <div class="table-inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Company / Ticker</th>
+            <th>Lead Drug</th>
+            <th>Molecule / Class</th>
+            <th>Main Indication(s)</th>
+            <th>Stage (lead program)</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td>
+              <span class="company">Compass Pathways</span>
+              <span class="ticker">CMPS</span>
+            </td>
+            <td><div class="product">COMP360</div></td>
+            <td class="muted-cell">Synthetic psilocybin + therapy</td>
+            <td class="muted-cell">Treatment-resistant depression (TRD)</td>
+            <td><span class="stage">Phase 3</span> Two trials hit primary endpoints; preparing for FDA review</td>
+          </tr>
+
+          <tr>
+            <td>
+              <span class="company">Atai Life Sciences</span>
+              <span class="ticker">ATAI</span>
+            </td>
+            <td><div class="product">Portfolio (incl. ~20% stake in COMP360)</div></td>
+            <td class="muted-cell">Ketamine, psilocybin, and others</td>
+            <td class="muted-cell">TRD, anxiety, substance use disorders</td>
+            <td><span class="stage">Clinical-stage platform</span> Partner programs across multiple modalities</td>
+          </tr>
+
+          <tr>
+            <td>
+              <span class="company">Cybin</span>
+              <span class="ticker">CYBN</span>
+            </td>
+            <td><div class="product">CYB003</div></td>
+            <td class="muted-cell">Deuterated psilocybin analog</td>
+            <td class="muted-cell">Major depressive disorder (MDD)</td>
+            <td><span class="stage">Phase 2 complete</span> Dosing finished; planning Phase 3 path</td>
+          </tr>
+
+          <tr>
+            <td>
+              <span class="company">MindMed</span>
+              <span class="ticker">MNMD</span>
+            </td>
+            <td><div class="product">MM120</div></td>
+            <td class="muted-cell">LSD-derived compound</td>
+            <td class="muted-cell">Generalized anxiety disorder (GAD)</td>
+            <td><span class="stage">Phase 3 ongoing</span> Phase 2 positive; Phase 3 trial underway</td>
+          </tr>
+
+          <tr>
+            <td>
+              <span class="company">GH Research</span>
+              <span class="ticker">GHRS</span>
+            </td>
+            <td><div class="product">GH001</div></td>
+            <td class="muted-cell">Inhaled 5-MeO-DMT–like psychedelic</td>
+            <td class="muted-cell">Treatment-resistant depression</td>
+            <td><span class="stage">Phase 2b</span> Met primary endpoint with rapid MADRS score drops</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="caption">
+    Sources:
+    <a href="https://compasspathways.com">Compass Pathways</a> ·
+    <a href="https://atai.life">Atai Life Sciences</a> ·
+    <a href="https://cybin.com">Cybin</a> ·
+    <a href="https://mindmed.co">MindMed</a> ·
+    <a href="https://ghresearch.com">GH Research</a>
+  </p>
+
+</body>
+</html>
