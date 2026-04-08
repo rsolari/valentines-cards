@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Male Contraceptive Pipeline</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --pill-blue:    #4A90D9;
+      --pill-teal:    #3EC9C0;
+      --pill-lavender:#9B7FD4;
+      --pill-coral:   #E8735A;
+      --pill-mint:    #52C97F;
+      --bg:           #0F1117;
+      --surface:      #1A1D27;
+      --surface2:     #22263A;
+      --text:         #E8EAF2;
+      --muted:        #7A80A0;
+      --border:       #2E3350;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      padding: 48px 24px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--pill-teal);
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 40px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── outer pill frame ── */
+    .table-frame {
+      position: relative;
+      max-width: 1100px;
+      margin: 0 auto;
+      border-radius: 48px;
+      padding: 4px;
+      background: linear-gradient(
+        135deg,
+        var(--pill-blue) 0%,
+        var(--pill-teal) 30%,
+        var(--pill-lavender) 60%,
+        var(--pill-coral) 100%
+      );
+      box-shadow:
+        0 0 48px rgba(74, 144, 217, 0.25),
+        0 0 96px rgba(62, 201, 192, 0.12);
+    }
+
+    .table-frame::before {
+      content: '';
+      position: absolute;
+      inset: -12px;
+      border-radius: 56px;
+      border: 2px dashed rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+
+    /* pill cap decorations */
+    .table-frame::after {
+      content: '';
+      position: absolute;
+      top: -22px; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 22px;
+      background: linear-gradient(90deg, var(--pill-blue), var(--pill-teal));
+      border-radius: 12px 12px 0 0;
+      pointer-events: none;
+    }
+
+    .cap-bottom {
+      position: absolute;
+      bottom: -22px; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 22px;
+      background: linear-gradient(90deg, var(--pill-lavender), var(--pill-coral));
+      border-radius: 0 0 12px 12px;
+    }
+
+    .table-inner {
+      background: var(--surface);
+      border-radius: 44px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    /* ── header ── */
+    thead tr {
+      background: linear-gradient(
+        90deg,
+        rgba(74,144,217,0.18) 0%,
+        rgba(62,201,192,0.12) 50%,
+        rgba(155,127,212,0.18) 100%
+      );
+    }
+
+    th {
+      padding: 18px 16px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th:first-child { padding-left: 28px; }
+    th:last-child  { padding-right: 28px; }
+
+    /* ── rows ── */
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:hover {
+      background: var(--surface2);
+    }
+
+    td {
+      padding: 18px 16px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      vertical-align: top;
+      color: var(--text);
+    }
+
+    td:first-child { padding-left: 28px; }
+    td:last-child  { padding-right: 28px; }
+
+    /* company name */
+    .company {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+
+    /* pill-shaped badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-hormonal {
+      background: rgba(232,115,90,0.18);
+      color: var(--pill-coral);
+      border: 1px solid rgba(232,115,90,0.35);
+    }
+
+    .badge-non-hormonal {
+      background: rgba(62,201,192,0.15);
+      color: var(--pill-teal);
+      border: 1px solid rgba(62,201,192,0.3);
+    }
+
+    .badge-combo {
+      background: rgba(155,127,212,0.18);
+      color: var(--pill-lavender);
+      border: 1px solid rgba(155,127,212,0.35);
+    }
+
+    /* stage pill */
+    .stage {
+      display: inline-block;
+      padding: 3px 11px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: rgba(74,144,217,0.15);
+      color: var(--pill-blue);
+      border: 1px solid rgba(74,144,217,0.3);
+    }
+
+    /* product name */
+    .product {
+      font-weight: 600;
+      color: #c8ccdf;
+      margin-bottom: 2px;
+    }
+
+    .product-sub {
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    /* funding highlight */
+    .funding-amount {
+      font-weight: 700;
+      color: var(--pill-mint);
+    }
+
+    td.muted-cell {
+      color: var(--muted);
+    }
+
+    /* dividing line between two NEXT Life rows */
+    tr.same-company td {
+      border-top: 1px dashed rgba(255,255,255,0.06);
+    }
+
+    /* ── scatter pill decorations ── */
+    .pill-decor {
+      position: absolute;
+      border-radius: 999px;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    .pd1 { width:120px; height:44px; top:-30px; left:80px;  background:var(--pill-teal);    transform:rotate(-18deg); }
+    .pd2 { width: 80px; height:30px; top:-20px; right:120px; background:var(--pill-lavender); transform:rotate(12deg);  }
+    .pd3 { width: 60px; height:24px; bottom:-18px; left:160px; background:var(--pill-coral);  transform:rotate(8deg);   }
+    .pd4 { width:100px; height:36px; bottom:-24px; right:80px; background:var(--pill-blue);   transform:rotate(-22deg); }
+  </style>
+</head>
+<body>
+
+  <h1>Male Contraceptive Pipeline</h1>
+  <p class="subtitle">Current landscape as of 2026 — clinical &amp; late-stage programs</p>
+
+  <div class="table-frame">
+    <!-- scattered pill shapes -->
+    <div class="pill-decor pd1"></div>
+    <div class="pill-decor pd2"></div>
+    <div class="pill-decor pd3"></div>
+    <div class="pill-decor pd4"></div>
+    <div class="cap-bottom"></div>
+
+    <div class="table-inner">
+      <table>
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Product</th>
+            <th>Hormonal?</th>
+            <th>Stage (2026)</th>
+            <th>How it works</th>
+            <th>Funding / Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td><span class="company">Contraline</span></td>
+            <td>
+              <div class="product">ADAM™ hydrogel implant</div>
+            </td>
+            <td><span class="badge badge-non-hormonal">Non-hormonal</span></td>
+            <td><span class="stage">Phase 2 — Australia</span></td>
+            <td class="muted-cell">Injectable hydrogel into vas deferens; reversible physical barrier to sperm</td>
+            <td><span class="funding-amount">~$17.9 M</span> raised; backed by Founders Fund, GV, Jason Calacanis — most advanced non-hormonal device</td>
+          </tr>
+
+          <tr>
+            <td><span class="company">Contraline + Pop. Council</span></td>
+            <td>
+              <div class="product">NES/T transdermal gel</div>
+              <div class="product-sub">Nestorone® + testosterone</div>
+            </td>
+            <td><span class="badge badge-combo">Hormonal combo</span></td>
+            <td><span class="stage">Phase 2b complete; Phase 3 planned</span></td>
+            <td class="muted-cell">Daily gel suppresses sperm while maintaining healthy T levels</td>
+            <td>First-ever Phase 3 male hormonal contraceptive program if approved to proceed</td>
+          </tr>
+
+          <tr>
+            <td><span class="company">YourChoice Therapeutics</span></td>
+            <td>
+              <div class="product">YCT-529 oral pill</div>
+            </td>
+            <td><span class="badge badge-non-hormonal">Non-hormonal</span></td>
+            <td><span class="stage">Phase 1a done; 1a/2b ongoing</span></td>
+            <td class="muted-cell">Retinoic acid receptor antagonist — blocks vitamin A pathways in testes to halt sperm production</td>
+            <td><span class="funding-amount">~$15 M</span> Series A; NIH + Male Contraceptive Initiative funding</td>
+          </tr>
+
+          <tr>
+            <td><span class="company">NEXT Life Sciences</span></td>
+            <td>
+              <div class="product">Plan A™ injectable</div>
+              <div class="product-sub">Vasalgel</div>
+            </td>
+            <td><span class="badge badge-non-hormonal">Non-hormonal</span></td>
+            <td><span class="stage">Early human trials → Phase 2</span></td>
+            <td class="muted-cell">Long-acting hydrogel in vas deferens blocks sperm flow; reversible on demand</td>
+            <td>Seed + grants incl. MCI support; marketed as "condomless, long-lasting" contraception</td>
+          </tr>
+
+          <tr class="same-company">
+            <td><span class="company">NEXT Life Sciences</span></td>
+            <td>
+              <div class="product">NLS-133 on-demand pill</div>
+            </td>
+            <td><span class="badge badge-non-hormonal">Non-hormonal</span></td>
+            <td><span class="stage">Phase 2 development</span></td>
+            <td class="muted-cell">Short-acting oral pill for 24-hour protection; taken daily or as-needed</td>
+            <td>Higher-risk / earlier stage — but a true on-demand male pill if it works as intended</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</body>
+</html>
