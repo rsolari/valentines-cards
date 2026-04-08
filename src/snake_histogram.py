@@ -132,19 +132,17 @@ def make_frame(counts, reveal_frac=1.0, show_head=True):
     chart_w = chart_right - chart_left
     chart_h = chart_bottom - chart_top
 
-    max_count = max(counts) if max(counts) > 0 else 1
+    max_count = 10  # fixed y-axis 0-10
 
-    # Horizontal grid lines
-    grid_steps = 5
-    for g in range(grid_steps + 1):
-        gy = chart_bottom - int(g / grid_steps * chart_h)
+    # Horizontal grid lines, one per integer 0-10
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+    except Exception:
+        font = ImageFont.load_default()
+    for g in range(max_count + 1):
+        gy = chart_bottom - int(g / max_count * chart_h)
         draw.line([(chart_left, gy), (chart_right, gy)], fill=GRID_COLOR, width=1)
-        label_val = int(g / grid_steps * max_count)
-        try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
-        except Exception:
-            font = ImageFont.load_default()
-        draw.text((chart_left - 35, gy - 8), str(label_val), fill=AXIS_COLOR, font=font)
+        draw.text((chart_left - 25, gy - 8), str(g), fill=AXIS_COLOR, font=font)
 
     # Axes lines
     draw.line([(chart_left, chart_top), (chart_left, chart_bottom)],
