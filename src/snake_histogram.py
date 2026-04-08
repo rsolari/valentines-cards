@@ -160,7 +160,7 @@ def make_frame(counts, reveal_frac=1.0, show_head=True):
         title_font = ImageFont.load_default()
         label_font = ImageFont.load_default()
 
-    title = "Snake Count Histogram"
+    title = "Dreamsnake Book Club Ratings"
     bbox = draw.textbbox((0, 0), title, font=title_font)
     tx = (WIDTH - (bbox[2] - bbox[0])) // 2
     draw.text((tx, 8), title, fill=TITLE_COLOR, font=title_font)
@@ -267,7 +267,7 @@ def main():
         "--counts",
         type=int,
         nargs=10,
-        default=[3, 0, 5, 2, 7, 1, 4, 0, 6, 3],
+        default=[0, 0, 0, 0, 3, 7, 2, 0, 1, 0],
         metavar="N",
         help="10 count values for bins 1-10 (default: sample data)",
     )
