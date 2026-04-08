@@ -43,53 +43,160 @@ def _lerp(a, b, t):
     return a + (b - a) * t
 
 
-def draw_serpentine_body(draw, x_center, y_bottom, y_top, col_width, body_width=14):
-    """
-    Draw a serpentine snake body between y_bottom and y_top.
-
-    The snake weaves left-right with a sinusoidal path, producing
-    full S-curve cycles as it travels upward.
-    """
-    if y_top >= y_bottom:
-        return
-
+def _path_points(x_center, y_bottom, y_top, col_width):
+    """Return the sinusoidal spine points for a snake bar."""
     height = y_bottom - y_top
     amplitude = col_width * 0.28
-    # One full S-cycle every ~50 px of height
     frequency = (2 * math.pi) / 50.0
-
-    steps = max(60, int(height * 1.5))
+    steps = max(120, int(height * 2))
     pts = []
     for i in range(steps + 1):
         t = i / steps
         y = y_bottom - t * height
         x = x_center + amplitude * math.sin(frequency * t * height)
         pts.append((x, y))
+    return pts
 
-    # Shadow pass (dark green, slightly offset)
+
+def _cumulative_distances(pts):
+    """Return cumulative arc-length distances along pts."""
+    cum = [0.0]
+    for i in range(1, len(pts)):
+        dx = pts[i][0] - pts[i - 1][0]
+        dy = pts[i][1] - pts[i - 1][1]
+        cum.append(cum[-1] + math.sqrt(dx * dx + dy * dy))
+    return cum
+
+
+def _point_at_dist(pts, cum, d):
+    """Interpolate position and tangent direction at arc-length d."""
+    if d <= 0:
+        return pts[0], (0.0, -1.0)
+    if d >= cum[-1]:
+        return pts[-1], (0.0, -1.0)
+    # binary-search for the segment
+    lo, hi = 0, len(cum) - 1
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        if cum[mid] < d:
+            lo = mid
+        else:
+            hi = mid
+    t = (d - cum[lo]) / max(1e-9, cum[hi] - cum[lo])
+    x = pts[lo][0] + t * (pts[hi][0] - pts[lo][0])
+    y = pts[lo][1] + t * (pts[hi][1] - pts[lo][1])
+    dx = pts[hi][0] - pts[lo][0]
+    dy = pts[hi][1] - pts[lo][1]
+    length = math.sqrt(dx * dx + dy * dy) or 1e-9
+    return (x, y), (dx / length, dy / length)
+
+
+def _scale_polygon(cx, cy, tang, scale_w, scale_h):
+    """
+    Return a polygon approximating one overlapping snake scale.
+
+    The scale is a half-ellipse whose flat edge faces 'up' along the body
+    (toward the head) and whose rounded belly faces 'down'.  This creates
+    the classic roof-tile / reptile-scale overlap when rows are spaced at
+    ~60 % of scale_h apart.
+
+    tang = normalised (dx, dy) pointing toward the head.
+    perp = perpendicular (left of tang).
+    """
+    tx, ty = tang          # toward head
+    px, py = -ty, tx       # perpendicular
+
+    hw = scale_w / 2.0
+    n = 14   # polygon segments for the rounded belly
+    poly = []
+    # flat top edge
+    poly.append((cx - hw * px - hw * py, cy - hw * py + hw * px))  # won't use this trick
+    # Simpler: build in local space then rotate
+    local = []
+    # flat top: left → right
+    local.append((-hw, 0))
+    local.append(( hw, 0))
+    # rounded bottom half-ellipse (belly)
+    for k in range(n + 1):
+        angle = math.pi * k / n          # 0 → π  (bottom half)
+        lx = hw * math.cos(angle)        # +hw → -hw
+        ly = scale_h * math.sin(angle)   # 0 → 0, peak at h
+        local.append((lx, ly))
+
+    # Rotate by tang direction (tang is "up" == negative y in local space)
+    # local y+ = toward tail, local y- = toward head
+    # world: tang points toward head  → local -y maps to tang
+    def rotate(lx, ly):
+        # local (-y) → tang, local (x) → perp
+        wx = cx + lx * px + (-ly) * tx
+        wy = cy + lx * py + (-ly) * ty
+        return (wx, wy)
+
+    return [rotate(lx, ly) for lx, ly in local]
+
+
+def draw_serpentine_body(draw, x_center, y_bottom, y_top, col_width, body_width=14):
+    """
+    Draw a serpentine snake body between y_bottom and y_top with overlapping
+    scales that follow the sinusoidal spine.
+    """
+    if y_top >= y_bottom:
+        return None
+
+    pts = _path_points(x_center, y_bottom, y_top, col_width)
+    cum = _cumulative_distances(pts)
+    total_len = cum[-1]
+
+    scale_w = body_width * 1.25   # width of one scale across the body
+    scale_h = body_width * 0.75   # height of one scale along the body
+    row_step = scale_h * 0.62     # overlap: each row starts 62 % down previous
+
+    # ── 1. Shadow ────────────────────────────────────────────────────────────
     for i in range(len(pts) - 1):
         draw.line(
             [(pts[i][0] + 2, pts[i][1] + 2), (pts[i + 1][0] + 2, pts[i + 1][1] + 2)],
             fill=SNAKE_DARK,
-            width=body_width + 2,
-        )
-    # Main body
-    for i in range(len(pts) - 1):
-        draw.line([pts[i], pts[i + 1]], fill=SNAKE_BODY, width=body_width)
-    # Highlight (thin bright stripe down center)
-    for i in range(len(pts) - 1):
-        draw.line([pts[i], pts[i + 1]], fill=SNAKE_HIGHLIGHT, width=max(2, body_width // 4))
-
-    # Scale markings along the body
-    for i in range(0, len(pts) - 4, 6):
-        cx, cy = pts[i]
-        draw.ellipse(
-            [cx - 4, cy - 3, cx + 4, cy + 3],
-            fill=SNAKE_DARK,
-            outline=None,
+            width=int(body_width * 1.3),
         )
 
-    return pts  # return path so head can sit at the tip
+    # ── 2. Base body fill (so gaps between scales don't show background) ─────
+    for i in range(len(pts) - 1):
+        draw.line([pts[i], pts[i + 1]], fill=SNAKE_DARK, width=body_width)
+
+    # ── 3. Overlapping scales from tail (bottom) to head (top) ───────────────
+    import random as _random
+    d = row_step * 0.3   # start slightly up from the base
+    row = 0
+    while d < total_len:
+        (cx, cy), tang = _point_at_dist(pts, cum, d)
+
+        # Row offset: alternate columns slightly for a brick pattern
+        col_offset = (row % 2) * (scale_w * 0.5)
+
+        for col in range(-1, 2):       # three overlapping columns
+            ox = col * scale_w * 0.88 + col_offset - scale_w * 0.44
+            # shift center perpendicular to the spine
+            px, py = -tang[1], tang[0]
+            sx = cx + ox * px
+            sy = cy + ox * py
+
+            # colour variation: lighter in the centre of each scale
+            v = _random.uniform(0.82, 1.18)
+            sc = tuple(max(0, min(255, int(c * v))) for c in SNAKE_BODY)
+            dark_sc = tuple(max(0, int(c * 0.55)) for c in sc)
+            hi_sc = tuple(min(255, int(c * 1.45)) for c in sc)
+
+            poly = _scale_polygon(sx, sy, tang, scale_w * 0.95, scale_h)
+            draw.polygon(poly, fill=sc, outline=dark_sc)
+
+            # Tiny highlight crescent near the top of each scale
+            hi_poly = _scale_polygon(sx, sy, tang, scale_w * 0.45, scale_h * 0.28)
+            draw.polygon(hi_poly, fill=hi_sc, outline=None)
+
+        d += row_step
+        row += 1
+
+    return pts
 
 
 def draw_snake_head(draw, x, y, facing_right=True, size=18):
